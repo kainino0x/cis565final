@@ -146,8 +146,8 @@ var MouseForces = (function () {
 
         id.addEventListener("mousewheel", c.onmousewheel);
         id.addEventListener("mousemove", c.onmousemove);
-        id.addEventListener("mousedown", c.onmousedown);
-        id.addEventListener("mouseup", c.onmouseup);
+        //id.addEventListener("mousedown", c.onmousedown);
+        //id.addEventListener("mouseup", c.onmouseup);
 
         return c;
     };

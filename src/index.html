@@ -421,14 +421,42 @@ TurbulenzEngine.onload = function onloadFn() {
     var dragMax = mathDevice.v3Build(1000, 1000, 1000);
     var mouseForces = MouseForces.create(graphicsDevice, inputDevice, mathDevice, physicsDevice, dragMin, dragMax);
 
+    var fracture = function(hit) {
+        // TODO
+        console.log(hit);
+    };
+
+    // NOTE: These two completely supplant the onMouseDown/Up that are defined
+    // in mouseforces, so I disabled those. -K
+
     var onMouseDown = function (button) {
-        if (mouseCodes.BUTTON_0 === button || mouseCodes.BUTTON_1 === button) {
+        if (mouseCodes.BUTTON_0 === button) {
             mouseForces.onmousedown();
+        } else if (mouseCodes.BUTTON_1 === button) {
+            // update the mouseX/Y/Z in mouseForces
+            mouseForces.onmouseup();
+            // generate a ray for picking
+            mouseForces.generatePickRay(camera.matrix,
+                    1.0 / camera.recipViewWindowX,
+                    1.0 / camera.recipViewWindowY,
+                    camera.aspectRatio, camera.farPlane);
+
+            // perform the ray intersection test with the world
+            var rayHit = dynamicsWorld.rayTest({
+                from: mouseForces.pickRayFrom,
+                to:   mouseForces.pickRayTo,
+                mask: mouseForces.pickFilter
+            });
+
+            // if it hit something, fracture it!
+            if (rayHit) {
+                fracture(rayHit);
+            }
         }
     };
 
     var onMouseUp = function (button) {
-        if (mouseCodes.BUTTON_0 === button || mouseCodes.BUTTON_1 === button) {
+        if (mouseCodes.BUTTON_0 === button) {
             mouseForces.onmouseup();
         }
     };
