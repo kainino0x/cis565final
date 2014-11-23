@@ -356,10 +356,10 @@ TurbulenzEngine.onload = function onloadFn() {
     var inertia = boxShape.inertia;
     inertia = mathDevice.v3ScalarMul(inertia, mass);
 
-    var boxBodies = [];
+    var bodies = [];
 
     // Initial box is created as a rigid body
-    boxBodies[0] = physicsDevice.createRigidBody({
+    bodies[0] = physicsDevice.createRigidBody({
         shape: boxShape,
         mass: mass,
         inertia: inertia,
@@ -369,15 +369,15 @@ TurbulenzEngine.onload = function onloadFn() {
         angularDamping: 0.9,
         frozen: false
     });
-    dynamicsWorld.addRigidBody(boxBodies[0]);
+    dynamicsWorld.addRigidBody(bodies[0]);
 
     /*
     for (var n = 1; n < numCubes; n += 1) {
         // Each additional box is cloned from the original
-        boxBodies[n] = boxBodies[0].clone();
-        boxBodies[n].transform = m43BuildTranslation.call(mathDevice, 0.0, 1.0 + 1.5 * n, 0.0);
+        bodies[n] = bodies[0].clone();
+        bodies[n].transform = m43BuildTranslation.call(mathDevice, 0.0, 1.0 + 1.5 * n, 0.0);
 
-        dynamicsWorld.addRigidBody(boxBodies[n]);
+        dynamicsWorld.addRigidBody(bodies[n]);
     }
     */
 
@@ -386,8 +386,8 @@ TurbulenzEngine.onload = function onloadFn() {
         var transform = mathDevice.m43BuildIdentity();
         var v3Zero = mathDevice.v3BuildZero();
 
-        var body = boxBodies[0];
-        body.transform = mathDevice.m43BuildTranslation(0.0, 1.0 + 1.5 * n, 0.0, transform);
+        var body = bodies[0];
+        body.transform = mathDevice.m43BuildTranslation(0.0, 1.0, 0.0, transform);
         body.linearVelocity = v3Zero;
         body.angularVelocity = v3Zero;
         body.active = true;
@@ -422,8 +422,25 @@ TurbulenzEngine.onload = function onloadFn() {
     var mouseForces = MouseForces.create(graphicsDevice, inputDevice, mathDevice, physicsDevice, dragMin, dragMax);
 
     var fracture = function(hit) {
-        // TODO
         console.log(hit);
+
+        // Remove the body from the simulation + rendering
+        dynamicsWorld.removeRigidBody(hit.body);
+        var index = bodies.indexOf(hit.body);
+        if (index > -1) {
+            bodies.splice(index, 1);
+        }
+
+        var shards = [];
+        // TODO
+
+        // (TODO remove this) test by re-adding a clone
+        shards.push(hit.body.clone());
+
+        for (var i = 0; i < shards.length; i++) {
+            dynamicsWorld.addRigidBody(shards[i]);
+            bodies.push(shards[i]);
+        }
     };
 
     // NOTE: These two completely supplant the onMouseDown/Up that are defined
@@ -517,12 +534,14 @@ TurbulenzEngine.onload = function onloadFn() {
 
                 graphicsDevice.setTechniqueParameters(sharedTechniqueParameters);
 
-                boxBodies[0].calculateTransform(transform);
-                wvp = m43MulM44.call(mathDevice, transform, vp, wvp);
-                if (isVisibleBoxOrigin.call(mathDevice, cubeExtents, wvp)) {
-                    // Use directly the active technique when just a single property changes
-                    technique3d.worldViewProjection = wvp;
-                    graphicsDevice.drawIndexed(primitive, numIndices);
+                for (var i = 0; i < bodies.length; i++) {
+                    bodies[i].calculateTransform(transform);
+                    wvp = m43MulM44.call(mathDevice, transform, vp, wvp);
+                    if (isVisibleBoxOrigin.call(mathDevice, cubeExtents, wvp)) {
+                        // Use directly the active technique when just a single property changes
+                        technique3d.worldViewProjection = wvp;
+                        graphicsDevice.drawIndexed(primitive, numIndices);
+                    }
                 }
 
                 if (!mouseForces.pickedBody) {
@@ -605,7 +624,7 @@ TurbulenzEngine.onload = function onloadFn() {
         floor = null;
         cameraController = null;
         camera = null;
-        boxBodies = null;
+        bodies = null;
         inertia = null;
         clearColor = null;
         m43MulM44 = null;
