@@ -1,0 +1,647 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+    <title>
+        Physics - Samples - Turbulenz Engine
+    </title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+    <style type="text/css">
+html, body, div, span, object, iframe, h1, h2, p, a, img, ul, li, fieldset, form, label, legend, table, thead, tbody, tfoot, tr, th, td {
+    border: 0;
+    font-size: 100%;
+    margin: 0;
+    outline: 0;
+    padding: 0;
+    vertical-align: baseline;
+}
+    </style>
+    <!-- block tz_app_header -->
+    
+    <link rel="stylesheet" type="text/css" href="css/base_template.css">
+    <link rel="shortcut icon" href="img/favicon.ico">
+
+    <!-- end tz_app_header -->
+</head>
+<body style="background:#B4B4B4;font:normal normal normal 13px/1.231 Helvetica,Arial,sans-serif;text-shadow:1px 1px #F9F8F8;">
+    <div id="titlebar" style="position:fixed;height:65px;top:0;right:0;left:0;">
+        <strong style="font-size:24px;line-height:64px;margin:16px;">
+            <!-- block tz_app_title_name -->
+            Physics
+            <!-- end tz_app_title_name -->
+        </strong>
+        <div id="titlelogo"
+             style="float:right;width:27px;height:27px;margin:18px 24px;">
+        </div>
+    </div>
+    <div id="sidebar"
+         style="background:#B4B4B4;position:fixed;width:303px;top:65px;left:0;">
+        <!-- block tz_app_html_controls -->
+        
+<div class="html-control control-button">
+    <span class="control-title">Reset demo</span>
+    <input type="button" id="button01" value="Reset"/>
+</div>
+
+<div class="engine-control">
+<table cellspacing="0">
+<tbody>
+<tr>
+    <th>Key/Mouse</th><th>Camera Control</th>
+</tr>
+<tr>
+    <td class="key">W,A,S,D</td>
+    <td>Movement</td>
+</tr>
+<tr>
+    <td class="mouse">Right/left click (hold)</td>
+    <td>Manipulate box under crosshair</td>
+</tr>
+<tr>
+    <td class="key">R</td>
+    <td>Reset demo</td>
+</tr>
+<tr>
+    <td class="key">Enter</td>
+    <td>Toggle full screen</td>
+</tr>
+<tr>
+    <td class="key">Escape</td>
+    <td>Release mouse pointer</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+        <!-- end tz_app_html_controls -->
+    </div>
+    <div id="engine" style="background:#939393;position:fixed;top:65px;
+                            bottom:0;right:0;left:303px;
+                            border-left:1px solid #898989;">
+        <!--
+          HTML to create a plugin or canvas instance.
+          Supplied by 'tz_engine_div' variable.
+        -->
+        
+        <canvas id="turbulenz_game_engine_canvas" moz-opaque="true" tabindex="1">
+            Sorry, but your browser does not support WebGL or does not have it
+            enabled.  To get a WebGL-enabled browser, please see:<br/>
+            <a href="http://www.khronos.org/webgl/wiki/Getting_a_WebGL_Implementation" target="_blank">
+                Getting a WebGL Implementation
+            </a>
+        </canvas>
+
+        <script type="text/javascript">
+            var canvasSupported = true;
+            (function()
+            {
+                var contextNames = ["webgl", "experimental-webgl"];
+                var context = null;
+                var canvas = document.createElement('canvas');
+
+                document.body.appendChild(canvas);
+
+                for (var i = 0; i < contextNames.length; i += 1)
+                {
+                    try {
+                        context = canvas.getContext(contextNames[i]);
+                    } catch (e) {}
+
+                    if (context) {
+                        break;
+                    }
+                }
+                if (!context)
+                {
+                    canvasSupported = false;
+                    window.alert("Sorry, but your browser does not support WebGL or does not have it enabled.");
+                }
+
+                document.body.removeChild(canvas);
+            }());
+            var TurbulenzEngine = {};
+        </script>
+    </div>
+
+    <!-- begin 'tz_include_js' variable -->
+    <script type="text/javascript" src="jslib/debug.js"></script>
+<script type="text/javascript" src="jslib/vmath.js"></script>
+<script type="text/javascript" src="jslib/utilities.js"></script>
+<script type="text/javascript" src="jslib/aabbtree.js"></script>
+<script type="text/javascript" src="jslib/observer.js"></script>
+<script type="text/javascript" src="jslib/webgl/networkdevice.js"></script>
+<script type="text/javascript" src="jslib/webgl/mathdevice.js"></script>
+<script type="text/javascript" src="jslib/webgl/turbulenzengine.js"></script>
+<script type="text/javascript" src="jslib/webgl/tgaloader.js"></script>
+<script type="text/javascript" src="jslib/webgl/touch.js"></script>
+<script type="text/javascript" src="jslib/webgl/ddsloader.js"></script>
+<script type="text/javascript" src="jslib/webgl/graphicsdevice.js"></script>
+<script type="text/javascript" src="jslib/webgl/touchevent.js"></script>
+<script type="text/javascript" src="jslib/webgl/inputdevice.js"></script>
+<script type="text/javascript" src="jslib/webgl/soundtarloader.js"></script>
+<script type="text/javascript" src="jslib/webgl/sounddevice.js"></script>
+<script type="text/javascript" src="jslib/webgl/physicsdevice.js"></script>
+<script type="text/javascript" src="jslib/webgl/tarloader.js"></script>
+<script type="text/javascript" src="jslib/camera.js"></script>
+<script type="text/javascript" src="jslib/floor.js"></script>
+<script type="text/javascript" src="jslib/mouseforces.js"></script>
+<script type="text/javascript" src="jslib/requesthandler.js"></script>
+<script type="text/javascript" src="jslib/services/turbulenzservices.js"></script>
+<script type="text/javascript" src="jslib/services/turbulenzbridge.js"></script>
+<script type="text/javascript" src="jslib/services/gamesession.js"></script>
+<script type="text/javascript" src="jslib/services/mappingtable.js"></script>
+<script type="text/javascript" src="scripts/htmlcontrols.js"></script>
+    <!-- end 'tz_include_js' variable -->
+
+    <script type="text/javascript">
+      // ----------------------------------------
+      // Embedded code and startup code.
+      // Supplied by 'tz_startup_code' variable.
+      // ----------------------------------------
+      
+/*
+* @title: 3D Physics
+* @description:
+* This sample shows how to create and use the Turbulenz physics device.
+* The sample creates a floor plane and multiple cube shaped rigid bodies attached to nodes in the rendering scene.
+* Click on the rendering window to move and rotate the camera around,
+* click again to pick up and move the rigid bodies using the mouse forces object.
+*/
+
+
+
+
+
+
+
+
+
+
+
+/*global TurbulenzEngine: true */
+/*global RequestHandler: false */
+/*global window: false */
+/*global Camera: false */
+/*global CameraController: false */
+/*global Floor: false */
+/*global RequestHandler: false */
+/*global HTMLControls: false */
+/*global MouseForces: false */
+/*global TurbulenzServices: false */
+TurbulenzEngine.onload = function onloadFn() {
+    var errorCallback = function errorCallback(msg) {
+        window.alert(msg);
+    };
+
+    var graphicsDeviceParameters = {};
+    var graphicsDevice = TurbulenzEngine.createGraphicsDevice(graphicsDeviceParameters);
+
+    if (!graphicsDevice.shadingLanguageVersion) {
+        errorCallback("No shading language support detected.\nPlease check your graphics drivers are up to date.");
+        graphicsDevice = null;
+        return;
+    }
+
+    var mathDeviceParameters = {};
+    var mathDevice = TurbulenzEngine.createMathDevice(mathDeviceParameters);
+
+    var inputDeviceParameters = {};
+    var inputDevice = TurbulenzEngine.createInputDevice(inputDeviceParameters);
+
+    var assetsToLoad = 3;
+
+    // Setup camera & controller
+    var camera = Camera.create(mathDevice);
+    var cameraInitialize = function cameraInitializeFn() {
+        var worldUp = mathDevice.v3BuildYAxis();
+        camera.lookAt(worldUp, worldUp, mathDevice.v3Build(0.0, 3.0, -15.0));
+        camera.updateViewMatrix();
+    };
+    cameraInitialize();
+
+    var cameraController = CameraController.create(graphicsDevice, inputDevice, camera);
+
+    var floor = Floor.create(graphicsDevice, mathDevice);
+
+    var requestHandlerParameters = {};
+    var requestHandler = RequestHandler.create(requestHandlerParameters);
+
+    var shader3d = null;
+    var technique3d = null;
+
+    var shader3dLoaded = function shader3dLoadedFn(shaderText) {
+        if (shaderText) {
+            var shaderParameters = JSON.parse(shaderText);
+            shader3d = graphicsDevice.createShader(shaderParameters);
+            if (shader3d) {
+                technique3d = shader3d.getTechnique("textured3D");
+                assetsToLoad -= 1;
+            }
+        }
+    };
+
+    var sharedTechniqueParameters = graphicsDevice.createTechniqueParameters({
+        diffuse: null
+    });
+
+    /*jshint white: false*/
+    // Vertex buffer parameters for crate
+    var vertexbufferParameters = {
+        numVertices: 24,
+        attributes: ['FLOAT3', 'SHORT2'],
+        dynamic: false,
+        data: [
+            -0.5, -0.5, 0.5, 0, 0, 0.5, -0.5, 0.5, 1, 0, 0.5, 0.5, 0.5, 1, 1,
+            -0.5, 0.5, 0.5, 0, 1, -0.5, 0.5, 0.5, 0, 0, 0.5, 0.5, 0.5, 1, 0,
+            0.5, 0.5, -0.5, 1, 1, -0.5, 0.5, -0.5, 0, 1, -0.5, 0.5, -0.5, 1, 1,
+            0.5, 0.5, -0.5, 0, 1, 0.5, -0.5, -0.5, 0, 0, -0.5, -0.5, -0.5, 1,
+            0, -0.5, -0.5, -0.5, 0, 0, 0.5, -0.5, -0.5, 1, 0, 0.5, -0.5, 0.5,
+            1, 1, -0.5, -0.5, 0.5, 0, 1, 0.5, -0.5, 0.5, 0, 0, 0.5, -0.5, -0.5,
+            1, 0, 0.5, 0.5, -0.5, 1, 1, 0.5, 0.5, 0.5, 0, 1, -0.5, -0.5, -0.5,
+            0, 0, -0.5, -0.5, 0.5, 1, 0, -0.5, 0.5, 0.5, 1, 1, -0.5, 0.5, -0.5,
+            0, 1 ]
+    };
+
+    /*jshint white: true*/
+    var vertexbuffer = graphicsDevice.createVertexBuffer(vertexbufferParameters);
+
+    var semantics = graphicsDevice.createSemantics([graphicsDevice.SEMANTIC_POSITION, graphicsDevice.SEMANTIC_TEXCOORD]);
+
+    /*jshint white: false*/
+    var indexbufferParameters = {
+        numIndices: 36,
+        format: 'USHORT',
+        dynamic: false,
+        data: [
+            2, 0, 1, 3, 0, 2, 6, 4, 5, 7, 4, 6, 10, 8, 9, 11, 8, 10, 14, 12,
+            13, 15, 12, 14, 18, 16, 17, 19, 16, 18, 22, 20, 21, 23, 20, 22 ]
+    };
+
+    /*jshint white: true*/
+    var indexbuffer = graphicsDevice.createIndexBuffer(indexbufferParameters);
+
+    var primitive = graphicsDevice.PRIMITIVE_TRIANGLES;
+    var numIndices = 36;
+
+    // Cache mathDevice functions
+    var m43MulM44 = mathDevice.m43MulM44;
+    var isVisibleBoxOrigin = mathDevice.isVisibleBoxOrigin;
+    var v4Build = mathDevice.v4Build;
+    var m43BuildTranslation = mathDevice.m43BuildTranslation;
+
+    var shader2d = null;
+    var technique2d = null;
+
+    var shader2dLoaded = function shader2dLoadedFn(shaderText) {
+        if (shaderText) {
+            var shaderParameters = JSON.parse(shaderText);
+            shader2d = graphicsDevice.createShader(shaderParameters);
+            if (shader2d) {
+                technique2d = shader2d.getTechnique("constantColor2D");
+                assetsToLoad -= 1;
+            }
+        }
+    };
+
+    var techniqueParameters2d = graphicsDevice.createTechniqueParameters({
+        clipSpace: null,
+        constantColor: mathDevice.v4Build(0, 0, 0, 1)
+    });
+
+    var linePrim = graphicsDevice.PRIMITIVE_LINES;
+    var cursorFormat = [graphicsDevice.VERTEXFORMAT_FLOAT3];
+    var cursorSemantic = graphicsDevice.createSemantics([graphicsDevice.SEMANTIC_POSITION]);
+
+    var clearColor = mathDevice.v4Build(0.95, 0.95, 1.0, 1.0);
+
+    //
+    // Physics
+    //
+    var physicsDeviceParameters = {};
+    var physicsDevice = TurbulenzEngine.createPhysicsDevice(physicsDeviceParameters);
+
+    var dynamicsWorldParameters = {};
+    var dynamicsWorld = physicsDevice.createDynamicsWorld(dynamicsWorldParameters);
+
+    // Specify the generic settings for the collision objects
+    var collisionMargin = 0.005;
+    var mass = 20.0;
+    var numCubes = 200;
+    var cubeExtents = mathDevice.v3Build(0.5, 0.5, 0.5);
+
+    // Floor is represented by a plane
+    var floorShape = physicsDevice.createPlaneShape({
+        normal: mathDevice.v3Build(0, 1, 0),
+        distance: 0,
+        margin: collisionMargin
+    });
+
+    var floorObject = physicsDevice.createCollisionObject({
+        shape: floorShape,
+        transform: mathDevice.m43BuildIdentity(),
+        friction: 0.5,
+        restitution: 0.3,
+        group: physicsDevice.FILTER_STATIC,
+        mask: physicsDevice.FILTER_ALL
+    });
+
+    // Adds the floor collision object to the physicsDevice
+    dynamicsWorld.addCollisionObject(floorObject);
+
+    var boxShape = physicsDevice.createBoxShape({
+        halfExtents: cubeExtents,
+        margin: collisionMargin
+    });
+
+    var inertia = boxShape.inertia;
+    inertia = mathDevice.v3ScalarMul(inertia, mass);
+
+    var boxBodies = [];
+
+    // Initial box is created as a rigid body
+    boxBodies[0] = physicsDevice.createRigidBody({
+        shape: boxShape,
+        mass: mass,
+        inertia: inertia,
+        transform: mathDevice.m43BuildTranslation(0.0, 1.0, 0.0),
+        friction: 0.5,
+        restitution: 0.3,
+        angularDamping: 0.9,
+        frozen: false
+    });
+    dynamicsWorld.addRigidBody(boxBodies[0]);
+
+    /*
+    for (var n = 1; n < numCubes; n += 1) {
+        // Each additional box is cloned from the original
+        boxBodies[n] = boxBodies[0].clone();
+        boxBodies[n].transform = m43BuildTranslation.call(mathDevice, 0.0, 1.0 + 1.5 * n, 0.0);
+
+        dynamicsWorld.addRigidBody(boxBodies[n]);
+    }
+    */
+
+    var doReset = false;
+    var reset = function resetFn() {
+        var transform = mathDevice.m43BuildIdentity();
+        var v3Zero = mathDevice.v3BuildZero();
+
+        var body = boxBodies[0];
+        body.transform = mathDevice.m43BuildTranslation(0.0, 1.0 + 1.5 * n, 0.0, transform);
+        body.linearVelocity = v3Zero;
+        body.angularVelocity = v3Zero;
+        body.active = true;
+
+        cameraInitialize();
+    };
+
+    // Controls
+    var htmlControls = HTMLControls.create();
+
+    htmlControls.addButtonControl({
+        id: "button01",
+        value: "Reset",
+        fn: function schedulResetFn() {
+            doReset = true;
+        }
+    });
+    htmlControls.register();
+
+    var keyCodes = inputDevice.keyCodes;
+    var mouseCodes = inputDevice.mouseCodes;
+
+    var onKeyUp = function physicsOnkeyupFn(keynum) {
+        if (keynum === keyCodes.R) {
+            reset();
+        }
+    };
+
+    // Mouse forces
+    var dragMin = mathDevice.v3Build(-1000, 0, -1000);
+    var dragMax = mathDevice.v3Build(1000, 1000, 1000);
+    var mouseForces = MouseForces.create(graphicsDevice, inputDevice, mathDevice, physicsDevice, dragMin, dragMax);
+
+    var onMouseDown = function (button) {
+        if (mouseCodes.BUTTON_0 === button || mouseCodes.BUTTON_1 === button) {
+            mouseForces.onmousedown();
+        }
+    };
+
+    var onMouseUp = function (button) {
+        if (mouseCodes.BUTTON_0 === button || mouseCodes.BUTTON_1 === button) {
+            mouseForces.onmouseup();
+        }
+    };
+
+    // Add event listeners
+    inputDevice.addEventListener("keyup", onKeyUp);
+    inputDevice.addEventListener("mousedown", onMouseDown);
+    inputDevice.addEventListener("mouseup", onMouseUp);
+
+    //
+    // Update
+    //
+    var update = function updateFn() {
+        inputDevice.update();
+
+        if (doReset) {
+            reset();
+            doReset = false;
+        }
+
+        if (mouseForces.pickedBody) {
+            // If we're dragging a body don't apply the movement to the camera
+            cameraController.pitch = 0;
+            cameraController.turn = 0;
+            cameraController.step = 0;
+        }
+
+        cameraController.update();
+
+        var aspectRatio = (graphicsDevice.width / graphicsDevice.height);
+        if (aspectRatio !== camera.aspectRatio) {
+            camera.aspectRatio = aspectRatio;
+            camera.updateProjectionMatrix();
+        }
+        camera.updateViewProjectionMatrix();
+
+        if (0 >= assetsToLoad) {
+            mouseForces.update(dynamicsWorld, camera, 0.1);
+
+            dynamicsWorld.update();
+        }
+
+        var vp = camera.viewProjectionMatrix;
+        var transform = mathDevice.m43BuildIdentity();
+        var wvp;
+
+        if (graphicsDevice.beginFrame()) {
+            graphicsDevice.clear(clearColor, 1.0, 0);
+
+            floor.render(graphicsDevice, camera);
+
+            if (0 >= assetsToLoad) {
+                graphicsDevice.setStream(vertexbuffer, semantics);
+
+                graphicsDevice.setIndexBuffer(indexbuffer);
+
+                graphicsDevice.setTechnique(technique3d);
+
+                graphicsDevice.setTechniqueParameters(sharedTechniqueParameters);
+
+                boxBodies[0].calculateTransform(transform);
+                wvp = m43MulM44.call(mathDevice, transform, vp, wvp);
+                if (isVisibleBoxOrigin.call(mathDevice, cubeExtents, wvp)) {
+                    // Use directly the active technique when just a single property changes
+                    technique3d.worldViewProjection = wvp;
+                    graphicsDevice.drawIndexed(primitive, numIndices);
+                }
+
+                if (!mouseForces.pickedBody) {
+                    graphicsDevice.setTechnique(technique2d);
+
+                    var screenWidth = graphicsDevice.width;
+                    var screenHeight = graphicsDevice.height;
+                    techniqueParameters2d['clipSpace'] = v4Build.call(mathDevice, 2.0 / screenWidth, -2.0 / screenHeight, -1.0, 1.0);
+                    graphicsDevice.setTechniqueParameters(techniqueParameters2d);
+
+                    var writer = graphicsDevice.beginDraw(linePrim, 4, cursorFormat, cursorSemantic);
+
+                    if (writer) {
+                        var halfWidth = screenWidth * 0.5;
+                        var halfHeight = screenHeight * 0.5;
+                        writer([halfWidth - 10, halfHeight]);
+                        writer([halfWidth + 10, halfHeight]);
+                        writer([halfWidth, halfHeight - 10]);
+                        writer([halfWidth, halfHeight + 10]);
+
+                        graphicsDevice.endDraw(writer);
+                    }
+                }
+            }
+
+            graphicsDevice.endFrame();
+        }
+    };
+    var intervalID = TurbulenzEngine.setInterval(update, 1000 / 60);
+
+    var mappingTableReceived = function mappingTableReceivedFn(mappingTable) {
+        var textureParameters = {
+            src: mappingTable.getURL("textures/crate.jpg"),
+            mipmaps: true,
+            onload: function (texture) {
+                sharedTechniqueParameters['diffuse'] = texture;
+                assetsToLoad -= 1;
+            }
+        };
+
+        graphicsDevice.createTexture(textureParameters);
+
+        requestHandler.request({
+            src: mappingTable.getURL("shaders/generic3D.cgfx"),
+            onload: shader3dLoaded
+        });
+        requestHandler.request({
+            src: mappingTable.getURL("shaders/generic2D.cgfx"),
+            onload: shader2dLoaded
+        });
+    };
+
+    var gameSessionCreated = function gameSessionCreatedFn(gameSession) {
+        TurbulenzServices.createMappingTable(requestHandler, gameSession, mappingTableReceived);
+    };
+    var gameSession = TurbulenzServices.createGameSession(requestHandler, gameSessionCreated);
+
+    TurbulenzEngine.onunload = function destroyScene() {
+        TurbulenzEngine.clearInterval(intervalID);
+
+        if (gameSession) {
+            gameSession.destroy();
+            gameSession = null;
+        }
+
+        requestHandler = null;
+        indexbuffer = null;
+        vertexbuffer = null;
+        semantics = null;
+        cursorSemantic = null;
+        primitive = null;
+        linePrim = null;
+        technique3d = null;
+        shader3d = null;
+        technique2d = null;
+        shader2d = null;
+        techniqueParameters2d = null;
+        sharedTechniqueParameters = null;
+        mouseForces = null;
+        floor = null;
+        cameraController = null;
+        camera = null;
+        boxBodies = null;
+        inertia = null;
+        clearColor = null;
+        m43MulM44 = null;
+        m43BuildTranslation = null;
+        isVisibleBoxOrigin = null;
+        v4Build = null;
+        dragMax = null;
+        dragMin = null;
+        mouseCodes = null;
+        keyCodes = null;
+
+        TurbulenzEngine.flush();
+        physicsDevice = null;
+        inputDevice = null;
+        graphicsDevice = null;
+        mathDevice = null;
+    };
+};
+
+        // Engine startup
+        window.onload = function ()
+        {
+            var appEntry = TurbulenzEngine.onload;
+            var appShutdown = TurbulenzEngine.onunload;
+            if (!appEntry) {
+                window.alert("TurbulenzEngine.onload has not been set");
+                return;
+            }
+
+            var canvas =
+                document.getElementById('turbulenz_game_engine_canvas');
+
+            var startCanvas = function startCanvasFn()
+            {
+                if (canvas.getContext && canvasSupported)
+                {
+                    TurbulenzEngine = WebGLTurbulenzEngine.create({
+                        canvas: canvas,
+                        fillParent: true
+                    });
+
+                    if (!TurbulenzEngine) {
+                        window.alert("Failed to init TurbulenzEngine (canvas)");
+                        return;
+                    }
+
+                    TurbulenzEngine.onload = appEntry;
+                    TurbulenzEngine.onunload = appShutdown;
+                    appEntry()
+                }
+            }
+
+            var previousOnBeforeUnload = window.onbeforeunload;
+            window.onbeforeunload = function ()
+            {
+                if (TurbulenzEngine.onunload) {
+                    TurbulenzEngine.onunload.call(this);
+                }
+            };  // window.beforeunload
+
+            startCanvas();
+        };  // window.onload()
+
+    </script>
+
+</body>
+</html>
