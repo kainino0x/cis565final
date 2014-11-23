@@ -125,32 +125,32 @@ html, body, div, span, object, iframe, h1, h2, p, a, img, ul, li, fieldset, form
 
     <!-- begin 'tz_include_js' variable -->
     <script type="text/javascript" src="jslib/debug.js"></script>
-<script type="text/javascript" src="jslib/vmath.js"></script>
-<script type="text/javascript" src="jslib/utilities.js"></script>
-<script type="text/javascript" src="jslib/aabbtree.js"></script>
-<script type="text/javascript" src="jslib/observer.js"></script>
-<script type="text/javascript" src="jslib/webgl/networkdevice.js"></script>
-<script type="text/javascript" src="jslib/webgl/mathdevice.js"></script>
-<script type="text/javascript" src="jslib/webgl/turbulenzengine.js"></script>
-<script type="text/javascript" src="jslib/webgl/tgaloader.js"></script>
-<script type="text/javascript" src="jslib/webgl/touch.js"></script>
-<script type="text/javascript" src="jslib/webgl/ddsloader.js"></script>
-<script type="text/javascript" src="jslib/webgl/graphicsdevice.js"></script>
-<script type="text/javascript" src="jslib/webgl/touchevent.js"></script>
-<script type="text/javascript" src="jslib/webgl/inputdevice.js"></script>
-<script type="text/javascript" src="jslib/webgl/soundtarloader.js"></script>
-<script type="text/javascript" src="jslib/webgl/sounddevice.js"></script>
-<script type="text/javascript" src="jslib/webgl/physicsdevice.js"></script>
-<script type="text/javascript" src="jslib/webgl/tarloader.js"></script>
-<script type="text/javascript" src="jslib/camera.js"></script>
-<script type="text/javascript" src="jslib/floor.js"></script>
-<script type="text/javascript" src="jslib/mouseforces.js"></script>
-<script type="text/javascript" src="jslib/requesthandler.js"></script>
-<script type="text/javascript" src="jslib/services/turbulenzservices.js"></script>
-<script type="text/javascript" src="jslib/services/turbulenzbridge.js"></script>
-<script type="text/javascript" src="jslib/services/gamesession.js"></script>
-<script type="text/javascript" src="jslib/services/mappingtable.js"></script>
-<script type="text/javascript" src="scripts/htmlcontrols.js"></script>
+    <script type="text/javascript" src="jslib/vmath.js"></script>
+    <script type="text/javascript" src="jslib/utilities.js"></script>
+    <script type="text/javascript" src="jslib/aabbtree.js"></script>
+    <script type="text/javascript" src="jslib/observer.js"></script>
+    <script type="text/javascript" src="jslib/webgl/networkdevice.js"></script>
+    <script type="text/javascript" src="jslib/webgl/mathdevice.js"></script>
+    <script type="text/javascript" src="jslib/webgl/turbulenzengine.js"></script>
+    <script type="text/javascript" src="jslib/webgl/tgaloader.js"></script>
+    <script type="text/javascript" src="jslib/webgl/touch.js"></script>
+    <script type="text/javascript" src="jslib/webgl/ddsloader.js"></script>
+    <script type="text/javascript" src="jslib/webgl/graphicsdevice.js"></script>
+    <script type="text/javascript" src="jslib/webgl/touchevent.js"></script>
+    <script type="text/javascript" src="jslib/webgl/inputdevice.js"></script>
+    <script type="text/javascript" src="jslib/webgl/soundtarloader.js"></script>
+    <script type="text/javascript" src="jslib/webgl/sounddevice.js"></script>
+    <script type="text/javascript" src="jslib/webgl/physicsdevice.js"></script>
+    <script type="text/javascript" src="jslib/webgl/tarloader.js"></script>
+    <script type="text/javascript" src="jslib/camera.js"></script>
+    <script type="text/javascript" src="jslib/floor.js"></script>
+    <script type="text/javascript" src="jslib/mouseforces.js"></script>
+    <script type="text/javascript" src="jslib/requesthandler.js"></script>
+    <script type="text/javascript" src="jslib/services/turbulenzservices.js"></script>
+    <script type="text/javascript" src="jslib/services/turbulenzbridge.js"></script>
+    <script type="text/javascript" src="jslib/services/gamesession.js"></script>
+    <script type="text/javascript" src="jslib/services/mappingtable.js"></script>
+    <script type="text/javascript" src="scripts/htmlcontrols.js"></script>
     <!-- end 'tz_include_js' variable -->
 
     <script type="text/javascript">
@@ -317,6 +317,8 @@ TurbulenzEngine.onload = function onloadFn() {
     //
     // Physics
     //
+    var debugMode = true;
+
     var physicsDeviceParameters = {};
     var physicsDevice = TurbulenzEngine.createPhysicsDevice(physicsDeviceParameters);
 
@@ -403,6 +405,15 @@ TurbulenzEngine.onload = function onloadFn() {
         value: "Reset",
         fn: function schedulResetFn() {
             doReset = true;
+        }
+    });
+    htmlControls.addCheckboxControl({
+        id: "checkbox01",
+        value: "debugMode",
+        isSelected: debugMode,
+        fn: function() {
+            debugMode = !debugMode;
+            return debugMode;
         }
     });
     htmlControls.register();
@@ -542,6 +553,12 @@ TurbulenzEngine.onload = function onloadFn() {
                         technique3d.worldViewProjection = wvp;
                         graphicsDevice.drawIndexed(primitive, numIndices);
                     }
+                }
+
+                if (debugMode) {
+                    //scene.drawPhysicsNodes(graphicsDevice, shaderManager, camera, physicsManager);
+                    //scene.drawPhysicsGeometry(graphicsDevice, shaderManager, camera, physicsManager);
+                    drawContacts();
                 }
 
                 if (!mouseForces.pickedBody) {
