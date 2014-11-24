@@ -38,8 +38,8 @@ function spawnObjects(scene,physics,objlist) {
 
         var sceneObj = new CubicVR.SceneObject({
             mesh:src.mesh,
-            position:[(Math.random()-0.5)*2.0*10,10+(Math.random())*10,(Math.random()-0.5)*2.0*10],
-            rotation:[Math.random()*360,Math.random()*360,Math.random()*360]
+            position:[(Math.random()-0.5)*2.0*10,0,(Math.random()-0.5)*2.0*10],
+            rotation:[0,0,0]
         });
 
         var rigidObj = new CubicVR.RigidBody(sceneObj, {
@@ -133,6 +133,10 @@ function webGLStart() {
     var pickConstraint = null;
     var pickDist = 0;
 
+    var fracture = function(hit) {
+        console.log(hit);
+    };
+
     mvc.setEvents({
         mouseMove: function (ctx, mpos, mdelta, keyState) {
             if (!ctx.mdown) return;
@@ -151,7 +155,9 @@ function webGLStart() {
             var rayTo = scene.camera.unProject(mpos[0],mpos[1]);
             var result = physics.getRayHit(scene.camera.position,rayTo);
 
-            if (result && !pickConstraint) {
+            if (keyState[CubicVR.keyboard.CTRL]) {
+                fracture(result);
+            } else if (result && !pickConstraint) {
                 pickConstraint = new CubicVR.Constraint({
                     type: CubicVR.enums.physics.constraint.P2P,
                     rigidBody: result.rigidBody,
