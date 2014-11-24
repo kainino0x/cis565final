@@ -4,7 +4,7 @@
         <title>
             CubicVR.js: AMMO physics adapter test
         </title>
-        <script src="ammo.fast.js" type="text/javascript"></script>
+        <script src="ammo.js" type="text/javascript"></script>
         <script src="CubicVR.min.js" type="text/javascript"></script>
         <script type='text/javascript'>
 var spawnObjs = 2;
@@ -12,10 +12,9 @@ var spawnObjs = 2;
 function generateObjects() {
     var result = [];
 
-    var astModel = CubicVR.loadCollada("models/asteroids1.dae", "models/");
+    var astModel = CubicVR.loadCollada("models/icoshatter.dae", "models/");
 
-    // Add a ast to mesh, size 1.0
-    var astMesh = astModel.getSceneObject("asteroid1hull").getMesh();
+    var astMesh = astModel.getSceneObject("Icosphere_cell").getMesh();
 
     var astCollision = new CubicVR.CollisionMap({
         type: CubicVR.enums.collision.shape.CONVEX_HULL,
