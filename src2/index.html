@@ -4,7 +4,7 @@
         <title>
             CubicVR.js: AMMO physics adapter test
         </title>
-        <script src="ammo.js" type="text/javascript"></script>
+        <script src="ammo.fast.js" type="text/javascript"></script>
         <script src="CubicVR.min.js" type="text/javascript"></script>
         <script type='text/javascript'>
 var spawnObjs = 2;
@@ -138,10 +138,20 @@ function webGLStart() {
     var pickDist = 0;
 
     var fracture = function(ray, hit) {
-        console.log(ray);
-        console.log(hit);
         var rigid = hit.rigidBody;
         var obj = rigid.sceneObject;
+        var hull = rigid.shape;
+
+        /*
+        for (var i = 0; i < hull.getNumEdges(); i++) {
+            var p1 = new btVector3();
+            var p2 = new btVector3();
+            hull.getEdge(i, p1, p2);
+            console.log(
+                [p1.x(), p1.y(), p1.z(), p1.w()],
+                [p2.x(), p2.y(), p2.z(), p2.w()]);
+        }
+        */
 
         scene.remove(obj);
         physics.remove(rigid);
