@@ -27,6 +27,9 @@ function generateObjects() {
     return result;
 }
 
+// TODO: Remove this later if possible because it's probably slowish
+var rigid2obj = {};
+
 function spawnObjects(scene,physics,objlist) {
     var nobjs = objlist.length;
 
@@ -47,9 +50,11 @@ function spawnObjects(scene,physics,objlist) {
             mass: 1,
             collision: src.collision
         });
+        console.log(rigidObj);
 
         scene.bind(sceneObj);
         physics.bind(rigidObj);
+        rigid2obj[rigidObj] = sceneObj;
     }
 }
 
@@ -133,8 +138,21 @@ function webGLStart() {
     var pickConstraint = null;
     var pickDist = 0;
 
-    var fracture = function(hit) {
+    var fracture = function(ray, hit) {
+        console.log(ray);
         console.log(hit);
+        var rigid = hit.rigidBody;
+        var obj = rigid2obj[rigid];
+
+        scene.remove(obj);
+        physics.remove(rigid);
+
+        var newShard = function(sceneObj, rigidObj) {
+            scene.bind(sceneObj);
+            physics.bind(rigidObj);
+        };
+
+        // TODO
     };
 
     mvc.setEvents({
@@ -156,7 +174,9 @@ function webGLStart() {
             var result = physics.getRayHit(scene.camera.position,rayTo);
 
             if (keyState[CubicVR.keyboard.CTRL]) {
-                fracture(result);
+                if (result) {
+                    fracture(rayTo, result);
+                }
             } else if (result && !pickConstraint) {
                 pickConstraint = new CubicVR.Constraint({
                     type: CubicVR.enums.physics.constraint.P2P,
