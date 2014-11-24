@@ -214,9 +214,7 @@ function webGLStart() {
                 mass: 1,
                 collision: fracColl
             });
-            console.log(CubicVR);
-            var x = new CubicVR.btConvexHullComputer();
-            console.log(x);
+            
             r.setLinearVelocity(rigid.getLinearVelocity());
             // TODO: Find a solution to conserving angular velocity along the original axis of rotation.  Simply passing it through is incorrect as it spins around a local axis.
             r.setAngularVelocity(rigid.getAngularVelocity());
