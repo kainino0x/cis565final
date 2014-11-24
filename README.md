@@ -15,10 +15,6 @@ A pre-generated test fracture pattern (series of solid meshes):
 
 ![](img/fracturepattern.png)
 
-The set of points on the convex hull of the original object:
-
-![](img/hullpoints.png)
-
 ##Checklist
 ####Part 1
 * Set up codebase (Turbulenz?)
@@ -48,3 +44,12 @@ The most significant one is that Bullet's btConvexHullComputer, which computes a
 
 In order to move forward, we will be using bullet's btConvexHullShape to create a convex hull based on our set of points, and use the the edges (the faces are unavailable) for computing the fractures.  The edges also allow us to draw wireframes of the meshes, but not the faces.
 
+##Debug images
+
+The set of points on the convex hull of the original object:
+
+![](img/hullpoints.png)
+
+The set of edges returned by the Bullet btConvexHullShape object (not useful!):
+
+![](img/hulledges.png)
