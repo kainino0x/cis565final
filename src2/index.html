@@ -193,13 +193,12 @@ function webGLStart() {
         // Attempts to create a wireframe mesh based on the convex hull.
         var points = [];
         var faces = [];
-        for (var i = 0; i < hull.getNumEdges(); i++) {
+        for (var i = 0; i < hull.getNumVertices(); i++) {
             var p1 = new btVector3();
-            var p2 = new btVector3();
-            hull.getEdge(i, p1, p2);
+            hull.getVertex(i, p1);
             points.push([p1.x(), p1.y(), p1.z()]);
-            points.push([p2.x(), p2.y(), p2.z()]);
-            points.push([p1.x(), p1.y(), p1.z()]);
+            points.push([0, 0, 0]);
+            points.push([0, 0, 0]);
             faces.push([3 * i, 3 * i + 1, 3 * i + 2]);
         }
         var mesh = new CubicVR.Mesh({

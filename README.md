@@ -11,6 +11,14 @@ Algorithm Overview
 ###Fracturing
 -stuff-
 
+A pre-generated test fracture pattern (series of solid meshes):
+
+![](img/fracturepattern.png)
+
+The set of points on the convex hull of the original object:
+
+![](img/hullpoints.png)
+
 ##Checklist
 ####Part 1
 * Set up codebase (Turbulenz?)
