@@ -259,7 +259,12 @@ function webGLStart() {
         keyUp: null
     });
 
-    window.addEventListener("keypress",function(evt) { physics.reset(); },false);
+    window.addEventListener("keypress",function(evt) {
+        if (evt.key == 'r') {
+            physics.reset();
+        }
+        
+    },false);
 
     // Start our main drawing loop, it provides a timer and the gl context as parameters
     CubicVR.MainLoop(function(timer, gl) {
