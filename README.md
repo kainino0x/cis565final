@@ -1,12 +1,14 @@
-cis565final
+CIS565: Final Project -- Dynamic Real-Time Fracture in the Browser
 ===========
-
+Fall 2014
+-----------
+Jiatong He, Kai Ninomiya
+-----------
 https://www.graphics.rwth-aachen.de/media/teaching_files/mueller_siggraph12.pdf
 
 Algorithm Overview
-============================
-Fracturing
------------
+-----------------
+###Fracturing
 -stuff-
 
 ##Checklist
