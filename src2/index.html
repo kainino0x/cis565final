@@ -8,24 +8,30 @@
         <script src="CubicVR.min.js" type="text/javascript"></script>
         <script type='text/javascript'>
 var spawnObjs = 2;
+var fracturePattern;
 
+// Loads in the base mesh to be fractured.
+// Currently limited to convex hulls only.
+// NOTE: Asteroid.dae is NOT purely convex.
 function generateObjects() {
     var result = [];
-
-    var astModel = CubicVR.loadCollada("models/icoshatter.dae", "models/");
-
-    var astMesh = astModel.getSceneObject("Icosphere_cell").getMesh();
-
+    
+    var astModel = CubicVR.loadCollada("models/asteroids1.dae", "models/");
+    
+    // Add a ast to mesh, size 1.0
+    var astMesh = astModel.getSceneObject("asteroid1hull").getMesh();
+    
     var astCollision = new CubicVR.CollisionMap({
         type: CubicVR.enums.collision.shape.CONVEX_HULL,
         mesh: astMesh,
     });
-
+    
     result.push({mesh:astMesh,collision:astCollision});
-
+    
     return result;
 }
 
+// Binds the objects to the renderer and physics engine
 function spawnObjects(scene,physics,objlist) {
     var nobjs = objlist.length;
 
@@ -39,9 +45,8 @@ function spawnObjects(scene,physics,objlist) {
             name: "ast_obj" + i,
             mesh:src.mesh,
             position:[(Math.random()-0.5)*2.0*10,0,(Math.random()-0.5)*2.0*10],
-            rotation:[0,0,0]
+            rotation:[0,0,0],
         });
-
         var rigidObj = new CubicVR.RigidBody(sceneObj, {
             name: "ast_rigid" + i,
             type: "dynamic",
@@ -54,6 +59,28 @@ function spawnObjects(scene,physics,objlist) {
         scene.bind(sceneObj);
         physics.bind(rigidObj);
     }
+}
+
+// Loads in a fracture pattern as an array of meshes.  Currently at models/icoshatter.dae.
+function loadFracturePattern() {
+    var result = [];
+
+    var astModel = CubicVR.loadCollada("models/icoshatter.dae", "models/");
+
+    // TODO: make this more flexible with naming, or replace with our own voronoi decomp.
+    for (var i = 0; i < 8; i++) {
+        var astMesh = astModel.getSceneObject("Icosphere_cell_00" + i).getMesh();
+        var astPos = astModel.getSceneObject("Icosphere_cell_00" + i).position;
+        
+        // Currently also saves in the collision just for debugging.
+        var astCollision = new CubicVR.CollisionMap({
+            type: CubicVR.enums.collision.shape.CONVEX_HULL,
+            mesh: astMesh,
+        });
+        result.push({mesh:astMesh, position:astPos, collision:astCollision});
+    }
+
+    return result;
 }
 
 function webGLStart() {
@@ -133,14 +160,18 @@ function webGLStart() {
     var objlist = generateObjects();
     spawnObjects(scene,physics,objlist);
 
+    fracturePattern = loadFracturePattern();
+    
     var pickConstraint = null;
     var pickDist = 0;
 
+    // Fractures the hit mesh using fracturePattern.  The geometry of the target mesh is
+    //   approximated using its collision convex hull.
     var fracture = function(ray, hit) {
         var rigid = hit.rigidBody;
         var obj = rigid.sceneObject;
         var hull = rigid.shape;
-
+        console.log(hull);
         /*
         for (var i = 0; i < hull.getNumEdges(); i++) {
             var p1 = new btVector3();
@@ -161,14 +192,23 @@ function webGLStart() {
         };
 
         // TODO
-        {
+        for (var i = 0; i < fracturePattern.length; i++) {
             // test code: adds back a clone of the original object
-            var o = obj.clone();
+            var mesh = fracturePattern[i].mesh;
+            var coll = fracturePattern[i].collision;
+            var pos = fracturePattern[i].position;
+            
+            var o = new CubicVR.SceneObject({
+                name: obj.name + "_" + i,   
+                mesh:mesh,
+                position:[obj.position[0] + pos[0], obj.position[1] + pos[1], obj.position[2] + pos[2]],
+                rotation:obj.rotation,
+            });
             var r = new CubicVR.RigidBody(o, {
                 name: rigid.name + "_" + i,
                 type: "dynamic",
                 mass: 1,
-                collision: objlist[0].collision
+                collision: coll
             });
             newShard(o, r);
         }
