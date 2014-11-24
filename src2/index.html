@@ -141,7 +141,7 @@ function webGLStart() {
         console.log(ray);
         console.log(hit);
         var rigid = hit.rigidBody;
-        var obj = hit.rigidBody.sceneObject;
+        var obj = rigid.sceneObject;
 
         scene.remove(obj);
         physics.remove(rigid);
@@ -152,6 +152,17 @@ function webGLStart() {
         };
 
         // TODO
+        {
+            // test code: adds back a clone of the original object
+            var o = obj.clone();
+            var r = new CubicVR.RigidBody(o, {
+                name: rigid.name + "_" + i,
+                type: "dynamic",
+                mass: 1,
+                collision: objlist[0].collision
+            });
+            newShard(o, r);
+        }
     };
 
     mvc.setEvents({
