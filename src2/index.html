@@ -17,17 +17,23 @@ var fracturePattern;
 function generateObjects() {
     var result = [];
     
-    var astModel = CubicVR.loadCollada("models/asteroids1.dae", "models/");
-    
+    var astModel = CubicVR.loadCollada("models/icosphere.dae", "models/");
     // Add a ast to mesh, size 1.0
-    var astMesh = astModel.getSceneObject("asteroid1hull").getMesh();
+    var astObj = astModel.getSceneObject("Icosphere");
+    
+    var astMesh = astObj.getMesh();
+    astMesh.buildWireframe = true;
+    astMesh.setWireframe(true);
+    astMesh.buildEdges();
+    astObj.setWireframe(true);
     
     var astCollision = new CubicVR.CollisionMap({
         type: CubicVR.enums.collision.shape.CONVEX_HULL,
         mesh: astMesh,
     });
-    
     result.push({mesh:astMesh,collision:astCollision});
+    
+    console.log(astMesh);
     
     return result;
 }
@@ -54,8 +60,8 @@ function spawnObjects(scene,physics,objlist) {
             mass: 1,
             collision: src.collision
         });
-        console.log(sceneObj);
-        console.log(rigidObj);
+        //console.log(sceneObj);
+        //console.log(rigidObj);
 
         scene.bind(sceneObj);
         physics.bind(rigidObj);
@@ -172,7 +178,7 @@ function webGLStart() {
         var rigid = hit.rigidBody;
         var obj = rigid.sceneObject;
         var hull = rigid.shape;
-        console.log(hull);
+        //console.log(hull);
         /*
         for (var i = 0; i < hull.getNumEdges(); i++) {
             var p1 = new btVector3();
@@ -201,7 +207,7 @@ function webGLStart() {
             wireframe: true,
             buildWireframe: true,
             wireframeMaterial: {
-                color: [0.5, 0.2, 0.2]
+                color: [0.5, 1.0, 0.2]
             }
         });
         mesh.build({
@@ -212,6 +218,7 @@ function webGLStart() {
             }
         });
         mesh.buildEdges();
+        mesh.compile();
         var meshobj = new CubicVR.SceneObject({
                 name: "wireframe",   
                 mesh:mesh,
@@ -221,10 +228,9 @@ function webGLStart() {
             });
          
         scene.bind(meshobj);
-        console.log("asdkfhaf");
-        console.log(meshobj);
-        console.log(scene);
-        console.log("asdkfhaf");
+        
+        console.log(mesh);
+        
         // END: convex hull mesh creation
         
         var newShard = function(sceneObj, rigidObj) {
@@ -262,7 +268,7 @@ function webGLStart() {
             r.setAngularVelocity(rigid.getAngularVelocity());
             
             newShard(o, r);
-            console.log(o);
+            //console.log(o);
         }
         
         // Remove the original object.
