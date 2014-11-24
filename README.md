@@ -35,6 +35,8 @@ This one turned out to be a little tricky because we didn't find a javascript im
 
 ####Intersection Testing
 Intersection testing was difficult to solve because we were somewhat limited by the structures available to us through the CubicVR engine.  We spent some time figuring out the method to handle the cell-mesh intersections, which was more difficult than expected due to some limits in the libraries we used.
+
 The most significant one is that Bullet's btConvexHullComputer, which computes a convex hull mesh based on a set of points, seems to be unavailable in ammo.js.  This means that we need to calculate our own convex hull mesh, or work entirely in convex hulls, which will result in some necessary approximations on the geometry.
+
 In order to move forward, we will be using bullet's btConvexHullShape to create a convex hull based on our set of points, and use the the edges (the faces are unavailable) for computing the fractures.  The edges also allow us to draw wireframes of the meshes, but not the faces.
 
