@@ -202,7 +202,7 @@ function webGLStart() {
                 name: obj.name + "_" + i,   
                 mesh:mesh,
                 position:[obj.position[0] + pos[0], obj.position[1] + pos[1], obj.position[2] + pos[2]],
-                rotation:obj.rotation,
+                rotation:obj.rotation.slice(0), //copy of the obj's rotation.
             });
             var r = new CubicVR.RigidBody(o, {
                 name: rigid.name + "_" + i,
