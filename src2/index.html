@@ -12,21 +12,17 @@ var spawnObjs = 2;
 function generateObjects() {
     var result = [];
 
-    // Add a box to mesh, size 1.0
-    var boxMesh = new CubicVR.Mesh({
-        primitive: {
-            type: "box",
-            size: 2.0,
-        },
-        compile:true
+    var astModel = CubicVR.loadCollada("models/asteroids1.dae", "models/");
+
+    // Add a ast to mesh, size 1.0
+    var astMesh = astModel.getSceneObject("asteroid1hull").getMesh();
+
+    var astCollision = new CubicVR.CollisionMap({
+        type: CubicVR.enums.collision.shape.CONVEX_HULL,
+        mesh: astMesh,
     });
 
-    var boxCollision = new CubicVR.CollisionMap({
-        type: "box",
-        size: [2,2,2]
-    });
-
-    result.push({mesh:boxMesh,collision:boxCollision});
+    result.push({mesh:astMesh,collision:astCollision});
 
     return result;
 }
