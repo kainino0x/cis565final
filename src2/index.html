@@ -27,9 +27,6 @@ function generateObjects() {
     return result;
 }
 
-// TODO: Remove this later if possible because it's probably slowish
-var rigid2obj = {};
-
 function spawnObjects(scene,physics,objlist) {
     var nobjs = objlist.length;
 
@@ -40,21 +37,23 @@ function spawnObjects(scene,physics,objlist) {
         var src = objlist[i%nobjs];
 
         var sceneObj = new CubicVR.SceneObject({
+            name: "ast_obj" + i,
             mesh:src.mesh,
             position:[(Math.random()-0.5)*2.0*10,0,(Math.random()-0.5)*2.0*10],
             rotation:[0,0,0]
         });
 
         var rigidObj = new CubicVR.RigidBody(sceneObj, {
+            name: "ast_rigid" + i,
             type: "dynamic",
             mass: 1,
             collision: src.collision
         });
+        console.log(sceneObj);
         console.log(rigidObj);
 
         scene.bind(sceneObj);
         physics.bind(rigidObj);
-        rigid2obj[rigidObj] = sceneObj;
     }
 }
 
@@ -142,7 +141,7 @@ function webGLStart() {
         console.log(ray);
         console.log(hit);
         var rigid = hit.rigidBody;
-        var obj = rigid2obj[rigid];
+        var obj = hit.rigidBody.sceneObject;
 
         scene.remove(obj);
         physics.remove(rigid);
