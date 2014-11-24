@@ -191,6 +191,7 @@ function webGLStart() {
             physics.bind(rigidObj);
         };
 
+        console.log(obj.rotation);
         // TODO
         for (var i = 0; i < fracturePattern.length; i++) {
             // test code: adds back a clone of the original object
@@ -198,11 +199,12 @@ function webGLStart() {
             var coll = fracturePattern[i].collision;
             var pos = fracturePattern[i].position;
             
+            
             var o = new CubicVR.SceneObject({
                 name: obj.name + "_" + i,   
                 mesh:mesh,
                 position:[obj.position[0] + pos[0], obj.position[1] + pos[1], obj.position[2] + pos[2]],
-                rotation:obj.rotation.slice(0), //copy of the obj's rotation.
+                rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
             });
             var r = new CubicVR.RigidBody(o, {
                 name: rigid.name + "_" + i,
@@ -260,6 +262,7 @@ function webGLStart() {
     });
 
     window.addEventListener("keypress",function(evt) {
+        console.log(evt.which);
         if (evt.key == 'r') {
             physics.reset();
         }
