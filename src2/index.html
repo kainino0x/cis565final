@@ -4,8 +4,9 @@
         <title>
             CubicVR.js: AMMO physics adapter test
         </title>
-        <script src="ammo.js" type="text/javascript"></script>
-        <script src="CubicVR.min.js" type="text/javascript"></script>
+        <script src ="stats/build/stats.min.js" type ="text/javascript"></script>
+        <script src="js/ammo.fast.js" type="text/javascript"></script>
+        <script src="js/CubicVR.min.js" type="text/javascript"></script>
         <script type='text/javascript'>
 var spawnObjs = 2;
 var fracturePattern;
@@ -171,7 +172,7 @@ function webGLStart() {
         var rigid = hit.rigidBody;
         var obj = rigid.sceneObject;
         var hull = rigid.shape;
-        console.log(hull);
+        
         /*
         for (var i = 0; i < hull.getNumEdges(); i++) {
             var p1 = new btVector3();
@@ -183,37 +184,49 @@ function webGLStart() {
         }
         */
 
-        scene.remove(obj);
-        physics.remove(rigid);
+        
 
         var newShard = function(sceneObj, rigidObj) {
             scene.bind(sceneObj);
             physics.bind(rigidObj);
         };
 
-        console.log(obj.rotation);
         // TODO
         for (var i = 0; i < fracturePattern.length; i++) {
             // test code: adds back a clone of the original object
-            var mesh = fracturePattern[i].mesh;
-            var coll = fracturePattern[i].collision;
-            var pos = fracturePattern[i].position;
+            var fracMesh = fracturePattern[i].mesh;
+            var fracColl = fracturePattern[i].collision;
+            var fracPos = fracturePattern[i].position;
             
+            // Intersect each fracture pattern with hull to generate a new hull.
+            // Alternatively, intersect mesh with obj.mesh to generate a new mesh.
             
             var o = new CubicVR.SceneObject({
                 name: obj.name + "_" + i,   
-                mesh:mesh,
-                position:[obj.position[0] + pos[0], obj.position[1] + pos[1], obj.position[2] + pos[2]],
+                mesh:fracMesh,
+                position:[obj.position[0] + fracPos[0], obj.position[1] + fracPos[1], obj.position[2] + fracPos[2]],
                 rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
             });
+            // Need to pass in the linear and angular velocity as well.
             var r = new CubicVR.RigidBody(o, {
                 name: rigid.name + "_" + i,
                 type: "dynamic",
                 mass: 1,
-                collision: coll
+                collision: fracColl
             });
+            console.log(CubicVR);
+            var x = new CubicVR.btConvexHullComputer();
+            console.log(x);
+            r.setLinearVelocity(rigid.getLinearVelocity());
+            // TODO: Find a solution to conserving angular velocity along the original axis of rotation.  Simply passing it through is incorrect as it spins around a local axis.
+            r.setAngularVelocity(rigid.getAngularVelocity());
+            
             newShard(o, r);
         }
+        
+        // Remove the original object.
+        scene.remove(obj);
+        physics.remove(rigid);
     };
 
     mvc.setEvents({
