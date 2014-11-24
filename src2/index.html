@@ -172,7 +172,7 @@ function webGLStart() {
         var rigid = hit.rigidBody;
         var obj = rigid.sceneObject;
         var hull = rigid.shape;
-        
+        console.log(hull);
         /*
         for (var i = 0; i < hull.getNumEdges(); i++) {
             var p1 = new btVector3();
@@ -183,13 +183,55 @@ function webGLStart() {
                 [p2.x(), p2.y(), p2.z(), p2.w()]);
         }
         */
-
         
-
+        // Attempts to create a wireframe mesh based on the convex hull.
+        var points = [];
+        var faces = [];
+        for (var i = 0; i < hull.getNumEdges(); i++) {
+            var p1 = new btVector3();
+            var p2 = new btVector3();
+            hull.getEdge(i, p1, p2);
+            points.push([p1.x(), p1.y(), p1.z()]);
+            points.push([p2.x(), p2.y(), p2.z()]);
+            points.push([p1.x(), p1.y(), p1.z()]);
+            faces.push([3 * i, 3 * i + 1, 3 * i + 2]);
+        }
+        var mesh = new CubicVR.Mesh({
+            name: "wireframe",
+            wireframe: true,
+            buildWireframe: true,
+            wireframeMaterial: {
+                color: [0.5, 0.2, 0.2]
+            }
+        });
+        mesh.build({
+            points: points,
+            faces: faces,
+            material: {
+                color: [0.5, 0.2, 0.2]
+            }
+        });
+        mesh.buildEdges();
+        var meshobj = new CubicVR.SceneObject({
+                name: "wireframe",   
+                mesh:mesh,
+                position:[obj.position[0], obj.position[1], obj.position[2]],
+                rotation:[0,0,0],//obj.rotation.slice(0), //copy of the obj's rotation.
+                wireframe: true
+            });
+         
+        scene.bind(meshobj);
+        console.log("asdkfhaf");
+        console.log(meshobj);
+        console.log(scene);
+        console.log("asdkfhaf");
+        // END: convex hull mesh creation
+        
         var newShard = function(sceneObj, rigidObj) {
             scene.bind(sceneObj);
             physics.bind(rigidObj);
         };
+        
 
         // TODO
         for (var i = 0; i < fracturePattern.length; i++) {
@@ -214,14 +256,13 @@ function webGLStart() {
                 mass: 1,
                 collision: fracColl
             });
-            console.log(CubicVR);
-            var x = new CubicVR.btConvexHullComputer();
-            console.log(x);
+            
             r.setLinearVelocity(rigid.getLinearVelocity());
             // TODO: Find a solution to conserving angular velocity along the original axis of rotation.  Simply passing it through is incorrect as it spins around a local axis.
             r.setAngularVelocity(rigid.getAngularVelocity());
             
             newShard(o, r);
+            console.log(o);
         }
         
         // Remove the original object.
