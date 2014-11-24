@@ -17,10 +17,15 @@ var fracturePattern;
 function generateObjects() {
     var result = [];
     
-    var astModel = CubicVR.loadCollada("models/asteroids1.dae", "models/");
+    var astModel = CubicVR.loadCollada("models/icosphere.dae", "models/");
     
     // Add a ast to mesh, size 1.0
-    var astMesh = astModel.getSceneObject("asteroid1hull").getMesh();
+    var astObj = astModel.getSceneObject("Icosphere");
+    astObj.setWireframe(true);
+    var astMesh = astObj.getMesh();
+    astMesh.buildWireframe = true;
+    astMesh.wireframe = true;
+    astMesh.buildEdges();
     
     var astCollision = new CubicVR.CollisionMap({
         type: CubicVR.enums.collision.shape.CONVEX_HULL,
@@ -45,9 +50,11 @@ function spawnObjects(scene,physics,objlist) {
         var sceneObj = new CubicVR.SceneObject({
             name: "ast_obj" + i,
             mesh:src.mesh,
+            wireframe: true,
             position:[(Math.random()-0.5)*2.0*10,0,(Math.random()-0.5)*2.0*10],
             rotation:[0,0,0],
         });
+        sceneObj.setWireframe(true);
         var rigidObj = new CubicVR.RigidBody(sceneObj, {
             name: "ast_rigid" + i,
             type: "dynamic",
@@ -71,6 +78,9 @@ function loadFracturePattern() {
     // TODO: make this more flexible with naming, or replace with our own voronoi decomp.
     for (var i = 0; i < 8; i++) {
         var astMesh = astModel.getSceneObject("Icosphere_cell_00" + i).getMesh();
+        astMesh.buildWireframe = true;
+        astMesh.wireframe = true;
+        astMesh.buildEdges();
         var astPos = astModel.getSceneObject("Icosphere_cell_00" + i).position;
         
         // Currently also saves in the collision just for debugging.
@@ -111,7 +121,8 @@ function webGLStart() {
             areaFloor: -40,
             areaAxis: [-2,-2], // specified in degrees east/west north/south
             distance: 60
-        }
+        },
+        wireframe: true,
     });
 
     CubicVR.setSoftShadows(true);
@@ -247,6 +258,7 @@ function webGLStart() {
                 name: obj.name + "_" + i,   
                 mesh:fracMesh,
                 position:[obj.position[0] + fracPos[0], obj.position[1] + fracPos[1], obj.position[2] + fracPos[2]],
+                wireframe: true,
                 rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
             });
             // Need to pass in the linear and angular velocity as well.
@@ -316,8 +328,7 @@ function webGLStart() {
     });
 
     window.addEventListener("keypress",function(evt) {
-        console.log(evt.which);
-        if (evt.key == 'r') {
+        if (evt.which == 114) {
             physics.reset();
         }
         
