@@ -30,8 +30,10 @@ A pre-generated test fracture pattern (series of solid meshes):
 ####Setting up the codebase
 We initially began with Turbulenz, since it seemed like the most powerful engine available and combined the rigid body physics we needed with a renderer.  However, it was difficult to work with the convex hulls we wanted, so we switched to CubicVR.js, an open-source 3d engine that uses ammo.js for physics.
 
-Depending our future experience with CubicVR/Ammo, it's possible we'll switch
-back (or to yet another engine).
+Based on our experience so far, we will probably switch to using mesh
+representations instead of specialized convex hull representations, due to the
+more useful properties of meshes. Given this switch, it's possible we'll also
+move back to Turbulenz or another engine.
 
 ####Working Rigid Body Simulator
 This was very easy to set up with CubicVR/Ammo (using one of the CubicVR
@@ -46,16 +48,22 @@ This one turned out to be a little tricky because we didn't find a javascript im
 ####Intersection Testing
 Intersection testing was difficult to solve because we were somewhat limited by the structures available to us through the CubicVR engine.  We spent some time figuring out the method to handle the cell-mesh intersections, which was more difficult than expected due to some limits in the libraries we used.
 
-The most significant one is that Bullet's btConvexHullComputer, which computes a convex hull mesh based on a set of points, seems to be unavailable in ammo.js.  This means that we need to calculate our own convex hull mesh, or work entirely in convex hulls, which will result in some necessary approximations on the geometry.
+The most significant one is that Bullet's btConvexHullComputer, which computes a convex hull mesh based on a set of points, seems to be unavailable in ammo.js.
+This means that we would need to calculate our own convex hull mesh, or work entirely in convex hulls, which would result in some necessary approximations for the geometry.
 
-In order to move forward, we plan to use Bullet's btConvexHullShape to create a convex hull based on our set of points, and use the provided data/methods for computing the fractures (as the hull faces are unavailable).  The edges allow us to estimate wireframes of the meshes, but not compute the faces directly.
+Due to these limitations with the convex hull data exposed by Ammo.js, our next
+approach will be to do our operations directly on the meshes. In order to move
+forward, we plan to perform the fracture computations directly on mesh data
+(either an existing CubicVR structure or another simple implementation).
 
 ##Debug images
 
-The set of points on the convex hull of the original object:
+The set of points on the the original object
+(which is all that the btConvexHullShape stores):
 
 ![](img/hullpoints.png)
 
-The set of edges returned by the Bullet btConvexHullShape object (not useful!):
+The set of edges returned by the Bullet btConvexHullShape object
+(also not so useful!):
 
 ![](img/hulledges.png)
