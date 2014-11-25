@@ -9,7 +9,9 @@ https://www.graphics.rwth-aachen.de/media/teaching_files/mueller_siggraph12.pdf
 Algorithm Overview
 -----------------
 ###Fracturing
--stuff-
+At a high level, fracturing is implemented by performing boolean intersection
+between segments of a fracture pattern and the segments of the object to be
+fractured. More information on the method is found in Mueller's paper (above).
 
 A pre-generated test fracture pattern (series of solid meshes):
 
@@ -28,8 +30,12 @@ A pre-generated test fracture pattern (series of solid meshes):
 ####Setting up the codebase
 We initially began with Turbulenz, since it seemed like the most powerful engine available and combined the rigid body physics we needed with a renderer.  However, it was difficult to work with the convex hulls we wanted, so we switched to CubicVR.js, an open-source 3d engine that uses ammo.js for physics.
 
+Depending our future experience with CubicVR/Ammo, it's possible we'll switch
+back (or to yet another engine).
+
 ####Working Rigid Body Simulator
-This was very easy to set up with CubicVR, and was completed quickly.
+This was very easy to set up with CubicVR/Ammo (using one of the CubicVR
+provided examples), and was completed quickly.
 
 ####WebCL
 Currently not implemented due to our focus on getting a working engine and demo
@@ -42,7 +48,7 @@ Intersection testing was difficult to solve because we were somewhat limited by 
 
 The most significant one is that Bullet's btConvexHullComputer, which computes a convex hull mesh based on a set of points, seems to be unavailable in ammo.js.  This means that we need to calculate our own convex hull mesh, or work entirely in convex hulls, which will result in some necessary approximations on the geometry.
 
-In order to move forward, we will be using bullet's btConvexHullShape to create a convex hull based on our set of points, and use the the edges (the faces are unavailable) for computing the fractures.  The edges also allow us to draw wireframes of the meshes, but not the faces.
+In order to move forward, we plan to use Bullet's btConvexHullShape to create a convex hull based on our set of points, and use the provided data/methods for computing the fractures (as the hull faces are unavailable).  The edges allow us to estimate wireframes of the meshes, but not compute the faces directly.
 
 ##Debug images
 
