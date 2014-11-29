@@ -67,3 +67,31 @@ The set of edges returned by the Bullet btConvexHullShape object
 (also not so useful!):
 
 ![](img/hulledges.png)
+
+##Paralelization of the Intersection Algorithm
+The intersection algorithm is the first point of paralelization. Each fracture cell can be processed onto the mesh independently, which means that we can first paralelize by cell.  Within each cell, each plane of the cell needs to be used as a clipping plane to then clip against the mesh. This will likely be a bottleneck for the code, since clipping planes will need to be run sequentially.
+
+The intersection algorithm outline looks to be as follows:
+
+```
+setupClipMesh();
+For each fracture cell:
+  For each face of the fracture cell:
+    // perform clipping plane algorithm.  Based on the algorithm described at
+    //  http://www.geometrictools.com/Documentation/ClipMesh.pdf
+    clipVertices();
+    clipEdges();
+    clipFaces();
+  end for
+end for
+rebuildMeshes();
+triangulateMeshes(); //note that the algorithm describes a method to clip meshes that are not triangulated, and does not require triangle output.  The meshes needs to be retriangulated.  This can be paralelized if necessary.
+```
+
+Some issues are immediately clear:
+* Different amounts of processing will be required for different cells/planes.  This varies depending primarily on the number of faces in a cell.
+* Different amounts of memory will be needed for different cells/planes.  It is not immediately clear how many new vertices and faces a clipping plane will create.  Do we need to overcompensate and assume the worst-case scenario every time?
+
+Some optimizations can be made:
+* The fracture pattern can be stored as a non-triangulated mesh.  That is, each face is in its own plane.  This way there is no need to calculate the minimum number of clipping planes necessary.
+* What if we optimized by vertex-face-edge : plane intersection as opposed to cell-by-cell?
