@@ -90,7 +90,8 @@ triangulateMeshes(); //note that the algorithm describes a method to clip meshes
 
 Some issues are immediately clear:
 * Different amounts of processing will be required for different cells/planes.  This varies depending primarily on the number of faces in a cell.
-* Different amounts of memory will be needed for different cells/planes.  It is not immediately clear how many new vertices and faces a clipping plane will create.  Do we need to overcompensate and assume the worst-case scenario every time?
+* Different amounts of memory will be needed for different cells/planes.  It is not immediately clear how many new vertices and faces a clipping plane will create.  Do we need to overcompensate and assume the worst-case scenario every time?  This will likely become the main concern.
+* We need to adapt the presented algorithm to be able to handle multiple sequential clipping planes.  This should be straightforward since new vertices, edges, and faces are added into the list.
 
 Some optimizations can be made:
 * The fracture pattern can be stored as a non-triangulated mesh.  That is, each face is in its own plane.  This way there is no need to calculate the minimum number of clipping planes necessary.
