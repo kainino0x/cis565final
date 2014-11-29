@@ -219,12 +219,12 @@ function webGLStart() {
         mesh.buildEdges();
         mesh.compile();
         var meshobj = new CubicVR.SceneObject({
-                name: "wireframe",   
-                mesh:mesh,
-                position:[obj.position[0], obj.position[1], obj.position[2]],
-                rotation:[0,0,0],//obj.rotation.slice(0), //copy of the obj's rotation.
-                wireframe: true
-            });
+                name: "wireframe",      
+                mesh:mesh,   
+                position:[obj.position[0], obj.position[1], obj.position[2]],   
+                rotation:[0,0   ,0],//obj.rotation.slice(0), //copy of the obj's rotation.
+                wireframe: true   
+            });   
          
         scene.bind(meshobj);
         
