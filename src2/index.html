@@ -218,6 +218,10 @@ function dot3(a, b) {
     return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
 
+function add3(a, b) {
+    return [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+}
+
 function sub3(a, b) {
     return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 }
@@ -250,6 +254,10 @@ function containsNormal(a, norm) {
     return false;
 }
 
+function contains3c(a, c) {
+    return a[0] == c || a[1] == c || a[2] == c;
+}
+
 // extremely naive sequential implementation of intersection algorithm.
 function intersect(mesh, cell) {
     // compute 
@@ -261,30 +269,59 @@ function intersect(mesh, cell) {
     
     var center = [0,0,0];   // center of volume, average of all vertices.  Used to find the correct face normal.
     
+    // Generates the array of points.
+    /* points is an float[3] with properties:
+     *  bool culled
+     * points stores the coordinates of the vertex.
+    */
     for (var i = 0; i < points.length; i++) {
         points[i].culled = false;
         center = [center[0] + points[i][0], center[1] + points[i][1], center[2] + points[i][2]];
     }
     center = [center[0]/points.length, center[1]/points.length, center[2]/points.length];
     
-    for (var i = 0; i < mesh.faces.length; i++) {
-        faces.push(mesh.faces[i].points);
-        faces[i].culled = false;
-    }
-    
     // NOTE: REMEMBER TO BUILD THE EDGES WHEN ADDING NEW MESHES!
+    // Generates the array of edges.
+    /* edges is an int[2] with properties:
+     *  int state
+     * edges stores the indices of the vertices.
+     * state = -1 -> culled.  state = 0 -> passed.  state = 1 -> intersected.
+    */
     for (var i = 0; i < mesh.edges.length; i++) {
         edges.push([mesh.edges[i][2], mesh.edges[i][3]]);
         edges[i].state = 0; // -1 = culled, 0 = pass, 1 = intersect.
     }
     
-    // generate set of planes.
+    // Generates the array of faces.
+    /* faces is an int[3] with properties:
+     *  bool culled
+     *  int[3] edges
+     * faces stores the indices of the vertices.
+    */
+    for (var i = 0; i < mesh.faces.length; i++) {
+        faces.push(mesh.faces[i].points);
+        faces[i].culled = false;
+        
+        var faceEdges = [];
+        // TODO: Figure out why faceEdges doesn't contain the right values.  Uncomment the two console.logs to see the issue.
+        for (var j = edges.length - 1; j >= 0; j--) {
+            if (contains3c(faces[i], edges[j][0]) && contains3c(faces[i], edges[j][1])) {
+                faceEdges.push(j);
+                //console.log(j);
+            }
+        }
+        //console.log(faceEdges);
+        faces[i].edges = faceEdges;
+    }
+    
+    // generate set of planes from the cell.
     var cellPlanes = [];
     for (var i = 0; i < cell.faces.length; i++) {
         var p1 = cell.points[cell.faces[i].points[0]];
         var p2 = cell.points[cell.faces[i].points[1]];
         var p3 = cell.points[cell.faces[i].points[2]];
         
+        // flips the normal if it's facing inward
         var norm = cross3(sub3(p2, p1), sub3(p3, p1));
         if (dot3(norm, sub3(center, p1)) > 0) {
             norm = mult3c(norm, -1);
@@ -292,10 +329,144 @@ function intersect(mesh, cell) {
         
         norm = normalize3(norm);
         if (!containsNormal(cellPlanes, norm)) {
-            cellPlanes.push({normal:norm, d:-dot3(norm, p1)});
+            cellPlanes.push({normal:norm, d:-dot3(norm, p1), p:p1});
         }
     }
-    console.log(cellPlanes);
+    
+    // now clip mesh on each plane.
+    for (var i = cellPlanes.length - 1; i >= 0; --i) {
+        // process points
+        for (var j = points.length - 1; j >= 0; --j) {
+            if (!points[j].culled) {
+                points[j].culled = dot3(cellPlanes[i].normal, sub3(points[j], cellPlanes[i].p)) < 0;
+            }
+        }
+        
+        // process edges
+        // NOTE: In cases where the edge crosses the plane, the culled point should always be edges[j][1] for consistency.
+        for (var j = edges.length - 1; j >= 0; --j) {
+            if (edges[j].state == -1) {
+                continue;   // doing this so the entire body of the loop isn't indented further.
+            }
+            var p1 = points[edges[j][0]];
+            var p2 = points[edges[j][1]];
+            if (p1.culled && p2.culled) {
+                edges[j].state = -1;
+            } else if (p1.culled) {
+                edges[j].state = 1;
+            } else if (p2.culled) {
+                var temp = edges[j][0];
+                edges[j][0] = edges[j][1];
+                edges[j][1] = temp;
+                
+                var tempp = p1;
+                p1 = p2;
+                p2 = tempp;
+
+                edges[j].state = 1;
+            } else {
+                // do nothing.
+            }
+            
+            // Calculate intersection for new point
+            if (edges[j].state == 1) {
+                var v = normalize3(sub3(p2, p1));
+                var p = add3(p1, mult3c(v, -(dot3(p1, cellPlanes[i].normal) + cellPlanes[i].d) / dot3(v, cellPlanes[i].normal)));
+                p.culled = false;
+                
+                points.push(p);
+                edges[j][1] = points.length - 1;
+            }
+        }
+        
+        var newFaceEdges = [];
+        // process faces (need to close, and possibly triangulate)
+        for (var j = faces.length - 1; j >= 0; --j) {
+            if (faces[j].culled) {
+                continue;   // skip if current face is culled.
+            }
+            var e1 = edges[faces[j].edges[0]];
+            var e2 = edges[faces[j].edges[1]];
+            var e3 = edges[faces[j].edges[2]];
+            
+            if (e1.state == -1 && e2.state == -1 && e3.state == -1) {   // if all edges are culled, do nothing.
+                faces[j].culled = true;
+            } else if (e1.state == -1 || e2.state == -1 || e3.state == -1) {    // if one edge is culled (there should never be two), then make a new edge using the other two edges.
+                var newEdge = [];   // NOTE: newEdge will be at index edges.length when pushed onto edges.
+                // one state should be -1, two should be 1
+                if (e1.state == -1) {
+                    newEdge = [e2[1], e3[1]];
+                    faces[j].edges[0] = edges.length;
+                } else if (e2. state == -1) {
+                    newEdge = [e1[1], e3[1]];
+                    faces[j].edges[1] = edges.length;
+                } else {
+                    newEdge = [e2[1], e1[1]];
+                    faces[j].edges[2] = edges.length;
+                }
+                
+                newEdge.state = 0;
+                edges.push(newEdge);
+                newFaceEdges.push({edge:newEdge, index:edges.length - 1});
+            } else if (e1.state == 1 || e2.state == 1 || e3.state == 1) {   // if two edges intersect (there should never be one), then make new edge and triangulate.
+                var idx1, idx2, idx3;
+                // two states should be 1, one should be 0.
+                if (e1.state == 0) {
+                    idx1 = 0;
+                    idx2 = 1;
+                    idx3 = 2;
+                } else if (e2. state == 0) {
+                    idx1 = 1;
+                    idx2 = 2;
+                    idx3 = 0;
+                } else {
+                    idx1 = 2;
+                    idx2 = 0;
+                    idx3 = 1;
+                }
+                // swapped the indices so that e1 will always be the one above.
+                e1 = edges[faces[j].edges[idx1]];
+                e2 = edges[faces[j].edges[idx2]];
+                e3 = edges[faces[j].edges[idx3]];
+                
+                var newEdge = [e2[1], e3[1]];   // the edge along the plane. Index edges.length.
+                newEdge.state = 0;
+                
+                var newEdge2 = [e2[0], e3[1]];  // the edge to triangulate with.  Index edges.length + 1.
+                newEdge2.state = 0;
+                
+                var newFace = [e2[0], e3[1], e2[1]];
+                newFace.edges = [faces[j].edges[1], edges.length, edges.length + 1]
+                newFace.culled = false;
+                
+                faces[j].edges[1] = edges.length + 1;
+                
+                edges.push(newEdge);
+                newFaceEdges.push({edge:newEdge, index:edges.length - 1});
+                
+                edges.push(newEdge2);
+                
+                faces.push(newFace);
+            }
+        }
+        // sort the newFaceEdges into connected order (arbitrarily clockwise/counterclockwise) so we can triangulate it more easily.
+        for (var j = newFaceEdges.length - 2; j >= 0; j--) {
+            for (var k = j; k >= 0; k--) {
+                if (newFaceEdges[k].edge[0] == newFaceEdges[j + 1].edge[0] || newFaceEdges[k].edge[1] == newFaceEdges[j + 1].edge[0] ||
+                    newFaceEdges[k].edge[0] == newFaceEdges[j + 1].edge[1] || newFaceEdges[k].edge[1] == newFaceEdges[j + 1].edge[1] ) {
+                    var temp = newFaceEdges[j];
+                    newFaceEdges[j] = newFaceEdges[k];
+                    newFaceEdges[k] = temp;
+                }
+            }
+        }
+        //as a test, if you print out newFaceEdges here the edges should form a ring in order.
+        
+        // TODO: triangulate the new face, adding faces and edges when appropriate.
+        
+    }
+    
+    // TODO: iterate through points and faces, pushing the non-culled ones into newPoints/Faces, and updating the face indices appropriately.
     
     return {points: newPoints, faces: newFaces};
 };
@@ -440,6 +611,7 @@ function webGLStart() {
             var fracPos = fracturePattern[i].position;
             
             intersect(mesh, fracMesh);
+            // TODO: take the returned {points:p, faces:f}, build mesh, and add to scene.
             
             // Intersect each fracture pattern with hull to generate a new hull.
             // Alternatively, intersect mesh with obj.mesh to generate a new mesh.
