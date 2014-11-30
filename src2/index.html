@@ -210,6 +210,96 @@ function loadFracturePattern() {
     return result;
 }
 
+function cross3(a, b) {
+    return [a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]];
+}
+
+function dot3(a, b) {
+    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+}
+
+function sub3(a, b) {
+    return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+}
+
+function mult3c(a, c) {
+    return [a[0]*c, a[1]*c, a[2]*c];
+}
+
+function length3(a) {
+    return Math.sqrt(a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
+}
+
+function normalize3(a) {
+    var length = length3(a);
+    return [a[0]/length, a[1]/length, a[2]/length];
+}
+
+function nearlyEqual3(a, b) {
+    var EPSILON = 0.0001;
+    return Math.abs(dot3(a, b) - 1) < EPSILON;
+}
+
+function containsNormal(a, norm) {
+    var i = a.length;
+    while(--i >= 0) {
+        if (nearlyEqual3(a[i].normal, norm)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// extremely naive sequential implementation of intersection algorithm.
+function intersect(mesh, cell) {
+    // compute 
+    var newPoints = [];
+    var newFaces = [];
+    var points = mesh.points;
+    var faces = [];
+    var edges = [];
+    
+    var center = [0,0,0];   // center of volume, average of all vertices.  Used to find the correct face normal.
+    
+    for (var i = 0; i < points.length; i++) {
+        points[i].culled = false;
+        center = [center[0] + points[i][0], center[1] + points[i][1], center[2] + points[i][2]];
+    }
+    center = [center[0]/points.length, center[1]/points.length, center[2]/points.length];
+    
+    for (var i = 0; i < mesh.faces.length; i++) {
+        faces.push(mesh.faces[i].points);
+        faces[i].culled = false;
+    }
+    
+    // NOTE: REMEMBER TO BUILD THE EDGES WHEN ADDING NEW MESHES!
+    for (var i = 0; i < mesh.edges.length; i++) {
+        edges.push([mesh.edges[i][2], mesh.edges[i][3]]);
+        edges[i].state = 0; // -1 = culled, 0 = pass, 1 = intersect.
+    }
+    
+    // generate set of planes.
+    var cellPlanes = [];
+    for (var i = 0; i < cell.faces.length; i++) {
+        var p1 = cell.points[cell.faces[i].points[0]];
+        var p2 = cell.points[cell.faces[i].points[1]];
+        var p3 = cell.points[cell.faces[i].points[2]];
+        
+        var norm = cross3(sub3(p2, p1), sub3(p3, p1));
+        if (dot3(norm, sub3(center, p1)) > 0) {
+            norm = mult3c(norm, -1);
+        }
+        
+        norm = normalize3(norm);
+        if (!containsNormal(cellPlanes, norm)) {
+            cellPlanes.push({normal:norm, d:-dot3(norm, p1)});
+        }
+    }
+    console.log(cellPlanes);
+    
+    return {points: newPoints, faces: newFaces};
+};
+
 function webGLStart() {
     // by default generate a full screen canvas with automatic resize
     var gl = CubicVR.init();
@@ -329,7 +419,7 @@ function webGLStart() {
                 name: "wireframe",      
                 mesh:mesh,   
                 position:[obj.position[0], obj.position[1], obj.position[2]],   
-                rotation:[0,0   ,0],//obj.rotation.slice(0), //copy of the obj's rotation.
+                rotation:[0,0,0],//obj.rotation.slice(0), //copy of the obj's rotation.
                 wireframe: true   
             });   
          
@@ -348,6 +438,8 @@ function webGLStart() {
             var fracMesh = fracturePattern[i].mesh;
             var fracColl = fracturePattern[i].collision;
             var fracPos = fracturePattern[i].position;
+            
+            intersect(mesh, fracMesh);
             
             // Intersect each fracture pattern with hull to generate a new hull.
             // Alternatively, intersect mesh with obj.mesh to generate a new mesh.
