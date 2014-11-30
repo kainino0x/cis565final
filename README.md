@@ -71,6 +71,8 @@ The set of edges returned by the Bullet btConvexHullShape object
 ##Paralelization of the Intersection Algorithm
 The intersection algorithm is the first point of paralelization. Each fracture cell can be processed onto the mesh independently, which means that we can first paralelize by cell.  Within each cell, each plane of the cell needs to be used as a clipping plane to then clip against the mesh. This will likely be a bottleneck for the code, since clipping planes will need to be run sequentially.
 
+Note that the current algorithm assumes a triangulated mesh.
+
 The intersection algorithm outline looks to be as follows:
 
 ```
@@ -80,9 +82,9 @@ For each fracture cell:
   For each face of the fracture cell:
     // perform clipping plane algorithm.  Based on the algorithm described at
     //  http://www.geometrictools.com/Documentation/ClipMesh.pdf
-    clipVertices();
-    clipEdges();
-    clipFaces();
+    clipVertices(); // mark vertices as culled or passed.
+    clipEdges();  // mark edges as culled, intersecting, or passed.
+    clipFaces();  // mark faces as culled or passed, update faces based on edges.  Create new faces/edges if necessary to maintain triangulation.
   end for
 end for
 
