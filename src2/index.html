@@ -306,8 +306,8 @@ function webGLStart() {
         var points_faces = doCL(cl, mesh.points, mesh.faces);
         var points = points_faces[0];
         var faces = points_faces[1];
-        console.log(points_faces);
 
+        // debug display: adds back a wireframe clone of the original object
         var mesh = new CubicVR.Mesh({
             name: "wireframe",
             wireframe: true,
@@ -345,7 +345,6 @@ function webGLStart() {
 
         // TODO
         for (var i = 0; i < fracturePattern.length; i++) {
-            // test code: adds back a clone of the original object
             var fracMesh = fracturePattern[i].mesh;
             var fracColl = fracturePattern[i].collision;
             var fracPos = fracturePattern[i].position;
