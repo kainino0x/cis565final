@@ -75,6 +75,7 @@ The intersection algorithm outline looks to be as follows:
 
 ```
 setupClipMesh();
+
 For each fracture cell:
   For each face of the fracture cell:
     // perform clipping plane algorithm.  Based on the algorithm described at
@@ -84,9 +85,20 @@ For each fracture cell:
     clipFaces();
   end for
 end for
-rebuildMeshes();
-triangulateMeshes(); //note that the algorithm describes a method to clip meshes that are not triangulated, and does not require triangle output.  The meshes needs to be retriangulated.  This can be paralelized if necessary.
+
+rebuildMeshes();  // Parse through the vertex and face arrays and keep the unclipped ones, updating indices.
 ```
+
+clipFaces() is a little more work than the others.  The core of the algorithm is:
+* Update the faces whose edges are partially clipped.
+* Generate new edges along the plane
+* Generate faces to cover those new edges.  This face will be coplanar to the clipping plane.
+
+There are four cases that can occur for faces:
+* 1. all edges are above the clipping plane (no change).
+* 2. all edges are below the clipping plane (face gets removed).
+* 3. one edge is above, two intersect the clipping plane (this intersection forms a quad so we need to create two new edges and one new face).
+* 4. one edge is below, two intersect the clipping plane (this intersection forms a triangle so we only need to add in one new edge).
 
 Some issues are immediately clear:
 * Different amounts of processing will be required for different cells/planes.  This varies depending primarily on the number of faces in a cell.
