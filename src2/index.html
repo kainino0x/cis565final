@@ -192,12 +192,12 @@ function zpad(number) {
 function loadFracturePattern() {
     var result = [];
 
-    var astModel = CubicVR.loadCollada("models/cubeshatter.dae", "models/");
+    var astModel = CubicVR.loadCollada("models/icoshatter.dae", "models/");
 
     // TODO: make this more flexible with naming, or replace with our own voronoi decomp.
-    for (var i = 0; i < 49; i++) {
-        var astMesh = astModel.getSceneObject("Cube_cell_" + zpad(i)).getMesh();
-        var astPos  = astModel.getSceneObject("Cube_cell_" + zpad(i)).position;
+    for (var i = 0; i < 8; i++) {
+        var astMesh = astModel.getSceneObject("Icosphere_cell_" + zpad(i)).getMesh();
+        var astPos = astModel.getSceneObject("Icosphere_cell_" + zpad(i)).position;
         
         // Currently also saves in the collision just for debugging.
         var astCollision = new CubicVR.CollisionMap({
@@ -260,6 +260,13 @@ function contains3c(a, c) {
 
 function equals2i(a, b) {
     return (a[0] == b[0] && a[1] == b[1]) || (a[1] == b[0] && a[0] == b[1]);
+}
+
+function flipEdge(e) {
+    var edge;
+    edge = [e[1], e[0]];
+    edge.state = e.state;
+    return edge;
 }
 
 // extremely naive sequential implementation of intersection algorithm.
@@ -463,18 +470,41 @@ function intersect(mesh, cell) {
         // sort the newFaceEdges into connected order (arbitrarily clockwise/counterclockwise) so we can triangulate it more easily.
         for (var j = newFaceEdges.length - 2; j >= 0; j--) {
             for (var k = j; k >= 0; k--) {
-                if (newFaceEdges[k].edge[0] == newFaceEdges[j + 1].edge[0] || newFaceEdges[k].edge[1] == newFaceEdges[j + 1].edge[0] ||
-                    newFaceEdges[k].edge[0] == newFaceEdges[j + 1].edge[1] || newFaceEdges[k].edge[1] == newFaceEdges[j + 1].edge[1] ) {
+                if (newFaceEdges[k].edge[1] == newFaceEdges[j + 1].edge[0] || newFaceEdges[k].edge[0] == newFaceEdges[j + 1].edge[0]) {
+                    // flip the edge if it's backwards.  We want a-b b-c c-d
                     var temp = newFaceEdges[j];
+                    if (newFaceEdges[k].edge[0] == newFaceEdges[j + 1].edge[1]) {
+                        newFaceEdges[k].edge = flipEdge(newFaceEdges[k].edge);
+                    }
                     newFaceEdges[j] = newFaceEdges[k];
                     newFaceEdges[k] = temp;
                 }
             }
         }
-        //as a test, if you print out newFaceEdges here the edges should form a ring in order.
         
-        // TODO: triangulate the new face, adding faces and edges when appropriate.
-        
+        if (newFaceEdges.length > 0) {
+            // Triangulates the face.
+            var lastEdge = newFaceEdges[0];
+            for (var j = 1; j < newFaceEdges.length - 2; j++) {
+                var newEdge = [lastEdge.edge[0], newFaceEdges[j].edge[1]];
+                newEdge.state = 0;
+                console.log('a');
+                edges.push(newEdge);
+                
+                var newFace = [lastEdge.edge[0], newFaceEdges[j].edge[0], newFaceEdges[j].edge[1]];
+                newFace.edges = [lastEdge.index, newFaceEdges[j].index, edges.length - 1];
+                newFace.culled = false;
+                faces.push(newFace);
+                
+                lastEdge.edge = newEdge;
+                lastEdge.index = edges.length - 1;
+            }
+            
+            var newFace = [lastEdge.edge[0], lastEdge.edge[1], newFaceEdges[newFaceEdges.length - 1].edge[0]];
+            newFace.edges = [lastEdge.index, newFaceEdges[newFaceEdges.length - 2].index, newFaceEdges[newFaceEdges.length - 1].index];
+            newFace.culled = false;
+            faces.push(newFace);
+        }
     }
     
     // TODO: iterate through points and faces, pushing the non-culled ones into newPoints/Faces, and updating the face indices appropriately.
