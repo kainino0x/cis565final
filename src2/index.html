@@ -41,13 +41,8 @@ function loadKernel(id) {
     return kernelSource;
 }
 
-var clprog;
-
 function initCL() {
-    clprog = {};
-
     var ctx = webcl.createContext();
-    clprog.ctx = ctx;
     var kernelSrc = loadKernel("fracturecl");
     var program = ctx.createProgram(kernelSrc);
     var device = ctx.getInfo(WebCL.CONTEXT_DEVICES)[0];
@@ -61,11 +56,15 @@ function initCL() {
                 + program.getBuildInfo(device, WebCL.PROGRAM_BUILD_LOG));
         throw e;
     }
-    clprog.kernel = program.createKernel("fracture");
-    clprog.queue = ctx.createCommandQueue(device);
+
+    var cl = {};
+    cl.ctx = ctx;
+    cl.kernel = program.createKernel("fracture");
+    cl.queue = ctx.createCommandQueue(device);
+    return cl;
 }
 
-function doCL(vertices, faces) {
+function doCL(cl, vertices, faces) {
     var vertcount = vertices.length;
     var facecount = faces.length;
 
@@ -78,38 +77,52 @@ function doCL(vertices, faces) {
 
     var facearr = new Uint32Array(faces.length * 3);
     for (var i = 0; i < facecount; i++) {
-        facearr[3 * i + 0] = faces[i][0];
-        facearr[3 * i + 1] = faces[i][1];
-        facearr[3 * i + 2] = faces[i][2];
+        facearr[3 * i + 0] = faces[i].points[0];
+        facearr[3 * i + 1] = faces[i].points[1];
+        facearr[3 * i + 2] = faces[i].points[2];
     }
 
-    var ctx = clprog.ctx;
-    var kernel = clprog.kernel;
-    var queue = clprog.queue;
+    var bufInV  = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY , vertcount * 3 * 4);
+    var bufInF  = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY , facecount * 3 * 4);
+    var bufOutV = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, vertcount * 3 * 4);
 
-    var bufInV  = ctx.createBuffer(WebCL.MEM_READ_ONLY , vertcount * 3 * 4);
-    var bufInF  = ctx.createBuffer(WebCL.MEM_READ_ONLY , facecount * 3 * 4);
-    var bufOutV = ctx.createBuffer(WebCL.MEM_WRITE_ONLY, vertcount * 3 * 4);
+    cl.kernel.setArg(0, new Uint32Array([vertcount]));
+    cl.kernel.setArg(1, bufInV);
+    cl.kernel.setArg(2, new Uint32Array([facecount]));
+    cl.kernel.setArg(3, bufInF);
+    cl.kernel.setArg(4, bufOutV);
 
-    kernel.setArg(0, new Uint32Array([vertcount]));
-    kernel.setArg(1, bufInV);
-    kernel.setArg(2, new Uint32Array([facecount]));
-    kernel.setArg(3, bufInF);
-    kernel.setArg(4, bufOutV);
-
-    queue.enqueueWriteBuffer(bufInV, false, 0, vertcount * 3 * 4, vertarr);
-    queue.enqueueWriteBuffer(bufInF, false, 0, facecount * 3 * 4, facearr);
+    cl.queue.enqueueWriteBuffer(bufInV, false, 0, vertcount * 3 * 4, vertarr);
+    cl.queue.enqueueWriteBuffer(bufInF, false, 0, facecount * 3 * 4, facearr);
 
     var localWS = [1];
     var globalWS = [vertcount];
 
-    queue.enqueueNDRangeKernel(kernel, globalWS.length, null, globalWS, localWS);
+    cl.queue.enqueueNDRangeKernel(cl.kernel, globalWS.length, null, globalWS, localWS);
 
-    var out = new Float32Array(vertcount * 3);
-    queue.enqueueReadBuffer(bufOutV, false, 0, vertcount * 3 * 4, out);
-    queue.finish();
+    var newvertarr = new Float32Array(vertcount * 3);
+    cl.queue.enqueueReadBuffer(bufOutV, false, 0, vertcount * 3 * 4, newvertarr);
+    cl.queue.finish();
 
-    return out;
+    var newfacearr = facearr;
+
+    var newverts = [];
+    for (var i = 0; i < newvertarr.length / 3; i++) {
+        newverts.push([
+                newvertarr[3 * i + 0],
+                newvertarr[3 * i + 1],
+                newvertarr[3 * i + 2]]);
+    }
+
+    var newfaces = [];
+    for (var i = 0; i < newfacearr.length / 3; i++) {
+        newfaces.push([
+                newfacearr[3 * i + 0],
+                newfacearr[3 * i + 1],
+                newfacearr[3 * i + 2]]);
+    }
+
+    return [newverts, newfaces];
 }
         </script>
 
@@ -207,6 +220,8 @@ function webGLStart() {
         return;
     };
 
+    var cl = initCL();
+
     // New scene with our canvas dimensions and default camera with FOV 80
     var scene = new CubicVR.Scene({
         camera: {
@@ -288,13 +303,11 @@ function webGLStart() {
 
         // Attempts to create a wireframe mesh based on the convex hull.
 
-        var points = mesh.points;
+        var points_faces = doCL(cl, mesh.points, mesh.faces);
+        var points = points_faces[0];
+        var faces = points_faces[1];
+        console.log(points_faces);
 
-        var faces = [];
-        for (var i = 0; i < mesh.faces.length; i++) {
-            var ps = mesh.faces[i].points;
-            faces.push(ps);
-        }
         var mesh = new CubicVR.Mesh({
             name: "wireframe",
             wireframe: true,
