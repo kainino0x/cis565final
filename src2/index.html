@@ -7,6 +7,112 @@
         <script src ="stats/build/stats.min.js" type ="text/javascript"></script>
         <script src="js/ammo.fast.js" type="text/javascript"></script>
         <script src="js/CubicVR.min.js" type="text/javascript"></script>
+
+        <script type="text/x-opencl" id="fracturecl">
+kernel void fracture(
+        /* 0 */ uint vertcount,
+        /* 1 */ global float *verts,
+        /* 2 */ uint facecount,
+        /* 3 */ global uint  *faces,
+        /* 4 */ global float *vertout
+        )
+{
+    uint idx = get_global_id(0);
+    if (idx > vertcount) {
+        return;
+    }
+
+    vertout[3 * idx + 0] = verts[3 * idx + 0];
+    vertout[3 * idx + 1] = verts[3 * idx + 1] + 1.0;
+    vertout[3 * idx + 2] = verts[3 * idx + 2];
+}
+        </script>
+
+        <script type="text/javascript">
+function loadKernel(id) {
+    var kernelElement = document.getElementById(id);
+    var kernelSource = kernelElement.text;
+    if (kernelElement.src != "") {
+        var mHttpReq = new XMLHttpRequest();
+        mHttpReq.open("GET", kernelElement.src, false);
+        mHttpReq.send(null);
+        kernelSource = mHttpReq.responseText;
+    }
+    return kernelSource;
+}
+
+var clprog;
+
+function initCL() {
+    clprog = {};
+
+    var ctx = webcl.createContext();
+    clprog.ctx = ctx;
+    var kernelSrc = loadKernel("fracturecl");
+    var program = ctx.createProgram(kernelSrc);
+    var device = ctx.getInfo(WebCL.CONTEXT_DEVICES)[0];
+
+    try {
+        program.build([device], "");
+    } catch (e) {
+        alert("Failed to build WebCL program. Error "
+                + program.getBuildInfo(device, WebCL.PROGRAM_BUILD_STATUS)
+                + ":  "
+                + program.getBuildInfo(device, WebCL.PROGRAM_BUILD_LOG));
+        throw e;
+    }
+    clprog.kernel = program.createKernel("fracture");
+    clprog.queue = ctx.createCommandQueue(device);
+}
+
+function doCL(vertices, faces) {
+    var vertcount = vertices.length;
+    var facecount = faces.length;
+
+    var vertarr = new Float32Array(vertices.length * 3);
+    for (var i = 0; i < vertcount; i++) {
+        vertarr[3 * i + 0] = vertices[i][0];
+        vertarr[3 * i + 1] = vertices[i][1];
+        vertarr[3 * i + 2] = vertices[i][2];
+    }
+
+    var facearr = new Uint32Array(faces.length * 3);
+    for (var i = 0; i < facecount; i++) {
+        facearr[3 * i + 0] = faces[i][0];
+        facearr[3 * i + 1] = faces[i][1];
+        facearr[3 * i + 2] = faces[i][2];
+    }
+
+    var ctx = clprog.ctx;
+    var kernel = clprog.kernel;
+    var queue = clprog.queue;
+
+    var bufInV  = ctx.createBuffer(WebCL.MEM_READ_ONLY , vertcount * 3 * 4);
+    var bufInF  = ctx.createBuffer(WebCL.MEM_READ_ONLY , facecount * 3 * 4);
+    var bufOutV = ctx.createBuffer(WebCL.MEM_WRITE_ONLY, vertcount * 3 * 4);
+
+    kernel.setArg(0, new Uint32Array([vertcount]));
+    kernel.setArg(1, bufInV);
+    kernel.setArg(2, new Uint32Array([facecount]));
+    kernel.setArg(3, bufInF);
+    kernel.setArg(4, bufOutV);
+
+    queue.enqueueWriteBuffer(bufInV, false, 0, vertcount * 3 * 4, vertarr);
+    queue.enqueueWriteBuffer(bufInF, false, 0, facecount * 3 * 4, facearr);
+
+    var localWS = [1];
+    var globalWS = [vertcount];
+
+    queue.enqueueNDRangeKernel(kernel, globalWS.length, null, globalWS, localWS);
+
+    var out = new Float32Array(vertcount * 3);
+    queue.enqueueReadBuffer(bufOutV, false, 0, vertcount * 3 * 4, out);
+    queue.finish();
+
+    return out;
+}
+        </script>
+
         <script type='text/javascript'>
 var spawnObjs = 2;
 var fracturePattern;
