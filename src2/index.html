@@ -258,6 +258,10 @@ function contains3c(a, c) {
     return a[0] == c || a[1] == c || a[2] == c;
 }
 
+function equals2i(a, b) {
+    return (a[0] == b[0] && a[1] == b[1]) || (a[1] == b[0] && a[0] == b[1]);
+}
+
 // extremely naive sequential implementation of intersection algorithm.
 function intersect(mesh, cell) {
     // compute 
@@ -306,11 +310,17 @@ function intersect(mesh, cell) {
         // TODO: Figure out why faceEdges doesn't contain the right values.  Uncomment the two console.logs to see the issue.
         for (var j = edges.length - 1; j >= 0; j--) {
             if (contains3c(faces[i], edges[j][0]) && contains3c(faces[i], edges[j][1])) {
-                faceEdges.push(j);
-                //console.log(j);
+                var exists = false;
+                for (var k = faceEdges.length - 1; k >= 0; k--) {
+                    if (equals2i(edges[faceEdges[k]], edges[j])) {
+                        exists = true;
+                    }
+                }
+                if (!exists) {
+                    faceEdges.push(j);
+                }
             }
         }
-        //console.log(faceEdges);
         faces[i].edges = faceEdges;
     }
     
@@ -389,6 +399,7 @@ function intersect(mesh, cell) {
             var e2 = edges[faces[j].edges[1]];
             var e3 = edges[faces[j].edges[2]];
             
+            // NOTE: we don't need to worry about resetting state to 0 for state=1 edges because we only ignore state=-1 edges.
             if (e1.state == -1 && e2.state == -1 && e3.state == -1) {   // if all edges are culled, do nothing.
                 faces[j].culled = true;
             } else if (e1.state == -1 || e2.state == -1 || e3.state == -1) {    // if one edge is culled (there should never be two), then make a new edge using the other two edges.
@@ -615,7 +626,7 @@ function webGLStart() {
             
             // Intersect each fracture pattern with hull to generate a new hull.
             // Alternatively, intersect mesh with obj.mesh to generate a new mesh.
-            
+            fracMesh.buildEdges();
             var o = new CubicVR.SceneObject({
                 name: obj.name + "_" + i,   
                 mesh:fracMesh,
