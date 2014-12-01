@@ -136,9 +136,9 @@ var fracturePattern;
 function generateObjects() {
     var result = [];
     
-    var astModel = CubicVR.loadCollada("models/tet.dae", "models/");
+    var astModel = CubicVR.loadCollada("models/icosphere.dae", "models/");
     // Add a ast to mesh, size 1.0
-    var astObj = astModel.getSceneObject("tet");
+    var astObj = astModel.getSceneObject("Icosphere");
     
     var astMesh = astObj.getMesh();
     
@@ -310,6 +310,7 @@ function intersect(mesh, cell) {
     */
     for (var i = 0; i < mesh.faces.length; i++) {
         faces.push(mesh.faces[i].points.slice());
+        faces[i].normal = mesh.faces[i].normal.slice();
         faces[i].culled = false;
         
         var faceEdges = [];
@@ -464,6 +465,7 @@ function intersect(mesh, cell) {
                 var newFace = [e2[0], e3[1], e2[1]];
                 newFace.edges = [faces[j].edges[idx2], edges.length, edges.length + 1]
                 newFace.culled = false;
+                newFace.normal = faces[j].normal.slice();
                 
                 // update the old face.
                 faces[j].edges[idx2] = edges.length + 1;
@@ -494,18 +496,20 @@ function intersect(mesh, cell) {
             }
         }
         
+        // Triangulates the new faces.
         if (newFaceEdges.length > 0) {
-            // Triangulates the face.
             var lastEdge = newFaceEdges[0];
             for (var j = 1; j < newFaceEdges.length - 2; j++) {
                 var newEdge = [lastEdge.edge[0], newFaceEdges[j].edge[1]];
                 newEdge.state = 0;
-                console.log('a');
                 edges.push(newEdge);
                 
                 var newFace = [lastEdge.edge[0], newFaceEdges[j].edge[0], newFaceEdges[j].edge[1]];
                 newFace.edges = [lastEdge.index, newFaceEdges[j].index, edges.length - 1];
                 newFace.culled = false;
+                // the normals for these faces are all just the negative normal of the plane.
+                
+                newFace.normal = mult3c(cellPlanes[i].normal, -1);
                 faces.push(newFace);
                 
                 lastEdge.edge = newEdge;
@@ -515,10 +519,12 @@ function intersect(mesh, cell) {
             var newFace = [lastEdge.edge[0], lastEdge.edge[1], newFaceEdges[newFaceEdges.length - 1].edge[0]];
             newFace.edges = [lastEdge.index, newFaceEdges[newFaceEdges.length - 2].index, newFaceEdges[newFaceEdges.length - 1].index];
             newFace.culled = false;
+            newFace.normal = mult3c(cellPlanes[i].normal, -1);
             faces.push(newFace);
         }
     }
     
+    console.log(faces);
     var newPoints = [];
     var newFaces = [];
     // TODO: iterate through points and faces, pushing the non-culled ones into newPoints/Faces, and updating the face indices appropriately.
@@ -534,9 +540,16 @@ function intersect(mesh, cell) {
     for (var i = 0, j = 0; i < faces.length; i++) {
         if (!faces[i].culled) {
             var f = faces[i];
-            newFaces[j] = [points_mapping[f[0]],
+            if (dot3(cross3(sub3(points[f[0]], points[f[2]]), sub3(points[f[1]], points[f[2]])), faces[i].normal) < 0) {
+            
+                newFaces[j] = [points_mapping[f[0]],
+                           points_mapping[f[2]],
+                           points_mapping[f[1]]];
+            } else {
+                newFaces[j] = [points_mapping[f[0]],
                            points_mapping[f[1]],
                            points_mapping[f[2]]];
+           }
             j++;
         }
     }
@@ -635,6 +648,7 @@ function webGLStart() {
         var obj = rigid.sceneObject;
         var mesh = obj.getMesh();
         mesh.buildEdges();
+        mesh.calcFaceNormals(); // face normals will be used in the clipping calculation to preserve the correct winding.
         
         // Remove the original object.
         scene.remove(obj);
@@ -643,8 +657,10 @@ function webGLStart() {
         var newShard = function(sceneObj, rigidObj) {
             scene.bind(sceneObj);
             physics.bind(rigidObj);
+            
+            console.log(o.getMesh().faces);
         };
-
+        console.log(mesh.faces);
         // TODO
         for (var i = 0; i < fracturePattern.length; i++) {
             var fracMesh = fracturePattern[i].mesh;
@@ -652,13 +668,11 @@ function webGLStart() {
             var fracPos = fracturePattern[i].position;
             
             var isx = intersect(mesh, fracMesh);
-            console.log(isx);
             
             // Intersect each fracture pattern with hull to generate a new hull.
             // Alternatively, intersect mesh with obj.mesh to generate a new mesh.
             var m = new CubicVR.Mesh({
                 name: mesh.name + "_" + i,
-                wireframe: true,
                 buildWireframe: true,
                 wireframeMaterial: {
                     color: [0.5, 1.0, 0.2]
@@ -672,6 +686,7 @@ function webGLStart() {
                 }
             });
             m.buildEdges();
+            m.calcNormals();
             m.compile();
             var o = new CubicVR.SceneObject({
                 name: obj.name + "_" + i,   
@@ -686,7 +701,6 @@ function webGLStart() {
                 mass: 1,
                 collision: fracColl // TODO correct this
             });
-            
             r.setLinearVelocity(rigid.getLinearVelocity());
             // TODO: Find a solution to conserving angular velocity along the original axis of rotation.  Simply passing it through is incorrect as it spins around a local axis.
             r.setAngularVelocity(rigid.getAngularVelocity());
