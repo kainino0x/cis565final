@@ -155,7 +155,7 @@ function flipEdge(e) {
     return edge;
 }
 
-function cellToPlanes(cell) {
+function cellToPlanes(cell, center) {
     var cellPlanes = [];
     for (var i = 0; i < cell.faces.length; i++) {
         var p1 = cell.points[cell.faces[i].points[0]].slice();
