@@ -136,9 +136,9 @@ var fracturePattern;
 function generateObjects() {
     var result = [];
     
-    var astModel = CubicVR.loadCollada("models/icosphere.dae", "models/");
+    var astModel = CubicVR.loadCollada("models/tet.dae", "models/");
     // Add a ast to mesh, size 1.0
-    var astObj = astModel.getSceneObject("Icosphere");
+    var astObj = astModel.getSceneObject("tet");
     
     var astMesh = astObj.getMesh();
     
@@ -272,8 +272,6 @@ function flipEdge(e) {
 // extremely naive sequential implementation of intersection algorithm.
 function intersect(mesh, cell) {
     // compute 
-    var newPoints = [];
-    var newFaces = [];
     var points = mesh.points;
     var faces = [];
     var edges = [];
@@ -506,8 +504,35 @@ function intersect(mesh, cell) {
             faces.push(newFace);
         }
     }
+
+    console.log(points);
+    console.log(faces);
     
+    var newPoints = [];
+    var newFaces = [];
     // TODO: iterate through points and faces, pushing the non-culled ones into newPoints/Faces, and updating the face indices appropriately.
+    var points_mapping = [];
+    for (var i = 0, j = 0; i < points.length; i++) {
+        if (!points[i].culled) {
+            var p = points[i];
+            newPoints[j] = [p[0], p[1], p[2]];
+            points_mapping[i] = j;
+            j++;
+        } else {
+            console.log(points[i]);
+        }
+    }
+    for (var i = 0, j = 0; i < faces.length; i++) {
+        if (!faces[i].culled) {
+            var f = faces[i];
+            newFaces[j] = [points_mapping[f[0]],
+                           points_mapping[f[1]],
+                           points_mapping[f[2]]];
+            j++;
+        } else {
+            console.log(faces[i]);
+        }
+    }
     
     return {points: newPoints, faces: newFaces};
 };
@@ -601,13 +626,22 @@ function webGLStart() {
     var fracture = function(ray, hit) {
         var rigid = hit.rigidBody;
         var obj = rigid.sceneObject;
-        var mesh = obj.getMesh();
+        var omesh = obj.getMesh();
+        omesh.buildEdges();
 
         // Attempts to create a wireframe mesh based on the convex hull.
 
-        var points_faces = doCL(cl, mesh.points, mesh.faces);
-        var points = points_faces[0];
-        var faces = points_faces[1];
+
+        var fmesh = {};
+        fmesh.points = [[0,0,0],[1,0,0],[0,0,1]];
+        fmesh.faces = [{points:[0,1,2]}];
+
+        var isx = intersect(omesh, fmesh);
+        console.log(isx);
+
+        //var points_faces = doCL(cl, mesh.points, mesh.faces);
+        var points = isx.points;
+        var faces  = isx.faces;
 
         // debug display: adds back a wireframe clone of the original object
         var mesh = new CubicVR.Mesh({
@@ -636,6 +670,8 @@ function webGLStart() {
             });   
          
         scene.bind(meshobj);
+
+        return;
         
         // END: convex hull mesh creation
         
@@ -643,7 +679,6 @@ function webGLStart() {
             scene.bind(sceneObj);
             physics.bind(rigidObj);
         };
-        
 
         // TODO
         for (var i = 0; i < fracturePattern.length; i++) {
@@ -651,7 +686,8 @@ function webGLStart() {
             var fracColl = fracturePattern[i].collision;
             var fracPos = fracturePattern[i].position;
             
-            intersect(mesh, fracMesh);
+            var intersection = intersect(mesh, fracMesh);
+            //console.log(intersection);
             // TODO: take the returned {points:p, faces:f}, build mesh, and add to scene.
             
             // Intersect each fracture pattern with hull to generate a new hull.
