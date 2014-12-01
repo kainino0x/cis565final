@@ -335,7 +335,7 @@ function intersect(mesh, cell) {
     
     // generate set of planes from the cell.
     var cellPlanes = [];
-    for (var i = 0; i < cell.faces.length; i++) {
+    for (var i = 0; i < 1/*cell.faces.length*/; i++) {
         var p1 = cell.points[cell.faces[i].points[0]].slice();
         var p2 = cell.points[cell.faces[i].points[1]].slice();
         var p3 = cell.points[cell.faces[i].points[2]].slice();
@@ -646,6 +646,7 @@ function webGLStart() {
     });
 
     var floorObject = new CubicVR.SceneObject({
+        name: "floor",
         mesh: floorMesh,
         scale: [100, 0.2, 100],
         position: [0, -5, 0],
@@ -764,7 +765,7 @@ function webGLStart() {
             console.log(o.getMesh().faces);
         };
         // TODO
-        for (var i = 0; i < fracturePattern.length; i++) {
+        for (var i = 1; i <  2/*fracturePattern.length*/; i++) {
             var fracMesh = fracturePattern[i].mesh;
             var fracColl = fracturePattern[i].collision;
             var fracPos = fracturePattern[i].position;
@@ -794,6 +795,7 @@ function webGLStart() {
             var o = new CubicVR.SceneObject({
                 name: obj.name + "_" + i,   
                 mesh: m,
+                wireframe: true,
                 position:[obj.position[0] + fracPos[0], obj.position[1] + fracPos[1], obj.position[2] + fracPos[2]],
                 rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
             });
@@ -834,6 +836,12 @@ function webGLStart() {
             if (keyState[CubicVR.keyboard.CTRL]) {
                 if (result) {
                     fracture_old(rayTo, result);
+                }
+            } else if (keyState[CubicVR.keyboard.SPACE]) {
+                for (var i = 0; i < scene.sceneObjects.length; i++) {
+                    if (scene.sceneObjects[i].name != "floor") {
+                        scene.sceneObjects[i].setWireframe(!scene.sceneObjects[i].wireframe);
+                    }
                 }
             } else if (result && !pickConstraint) {
                 pickConstraint = new CubicVR.Constraint({
