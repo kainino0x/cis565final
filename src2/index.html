@@ -157,7 +157,7 @@ function flipEdge(e) {
 
 function cellToPlanes(cell) {
     var cellPlanes = [];
-    for (var i = 0; i < 1/*cell.faces.length*/; i++) {
+    for (var i = 0; i < cell.faces.length; i++) {
         var p1 = cell.points[cell.faces[i].points[0]].slice();
         var p2 = cell.points[cell.faces[i].points[1]].slice();
         var p3 = cell.points[cell.faces[i].points[2]].slice();
@@ -656,7 +656,7 @@ function webGLStart() {
             console.log(o.getMesh().faces);
         };
         // TODO
-        for (var i = 1; i <  2/*fracturePattern.length*/; i++) {
+        for (var i = 0; i < fracturePattern.length; i++) {
             var fracMesh = fracturePattern[i].mesh;
             var fracColl = fracturePattern[i].collision;
             var fracPos = fracturePattern[i].position;
