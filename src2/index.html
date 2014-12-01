@@ -471,7 +471,7 @@ function intersect(mesh, cell) {
                 faces[j].edges[idx2] = edges.length + 1;
                 faces[j][0] = e2[0];
                 faces[j][1] = e3[0];
-                faces[j][2] = e2[1];
+                faces[j][2] = e3[1];
                 
                 edges.push(newEdge);
                 newFaceEdges.push({edge:newEdge, index:edges.length - 1});
