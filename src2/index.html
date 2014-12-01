@@ -136,9 +136,9 @@ var fracturePattern;
 function generateObjects() {
     var result = [];
     
-    var astModel = CubicVR.loadCollada("models/tet.dae", "models/");
+    var astModel = CubicVR.loadCollada("models/icosphere.dae", "models/");
     // Add a ast to mesh, size 1.0
-    var astObj = astModel.getSceneObject("tet");
+    var astObj = astModel.getSceneObject("Icosphere");
     
     var astMesh = astObj.getMesh();
     
@@ -192,12 +192,12 @@ function zpad(number) {
 function loadFracturePattern() {
     var result = [];
 
-    var astModel = CubicVR.loadCollada("models/tet1.dae", "models/");
+    var astModel = CubicVR.loadCollada("models/icoshatter.dae", "models/");
 
     // TODO: make this more flexible with naming, or replace with our own voronoi decomp.
-    for (var i = 0; i < 1; i++) {
-        var astMesh = astModel.getSceneObject("tet1").getMesh();
-        var astPos = astModel.getSceneObject("tet1").position;
+    for (var i = 0; i < 8; i++) {
+        var astMesh = astModel.getSceneObject("Icosphere_cell_" + zpad(i)).getMesh();
+        var astPos = astModel.getSceneObject("Icosphere_cell_" + zpad(i)).position;
         astMesh.buildEdges();
         
         // Currently also saves in the collision just for debugging.
@@ -557,6 +557,47 @@ function intersect(mesh, cell) {
     return {points: newPoints, faces: newFaces};
 };
 
+// Not sure if this function has the correct scope to add stuff to the scene.
+function addMeshToScene(verts, faces, name, position) {
+    // Intersect each fracture pattern with hull to generate a new hull.
+    // Alternatively, intersect mesh with obj.mesh to generate a new mesh.
+    var m = new CubicVR.Mesh({
+        name: name,
+        buildWireframe: true,
+        wireframeMaterial: {
+            color: [0.5, 1.0, 0.2]
+        }
+    });
+    m.build({
+        points: verts,
+        faces: faces,
+        material: {
+            color: [0.5, 0.2, 0.2]
+        }
+    });
+    m.buildEdges();
+    m.calcNormals();
+    m.compile();
+    var o = new CubicVR.SceneObject({
+        name: name,   
+        mesh: m,
+        position: position,
+        rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
+    });
+    // Need to pass in the linear and angular velocity as well.
+    var r = new CubicVR.RigidBody(o, {
+        name: name,
+        type: "dynamic",
+        mass: 1,
+        collision: fracColl // TODO correct this
+    });
+    r.setLinearVelocity(rigid.getLinearVelocity());
+    // TODO: Find a solution to conserving angular velocity along the original axis of rotation.  Simply passing it through is incorrect as it spins around a local axis.
+    r.setAngularVelocity(rigid.getAngularVelocity());
+    
+    newShard(o, r);
+}
+
 function webGLStart() {
     // by default generate a full screen canvas with automatic resize
     var gl = CubicVR.init();
@@ -641,9 +682,64 @@ function webGLStart() {
     var pickConstraint = null;
     var pickDist = 0;
 
+    var fracture = function(ray, hit) {
+        var rigid = hit.rigidBody;
+        var obj = rigid.sceneObject;
+        var mesh = obj.getMesh();
+        mesh.buildEdges();
+        mesh.calcFaceNormals(); // face normals will be used in the clipping calculation to preserve the correct winding.
+        
+        // Remove the original object.
+        scene.remove(obj);
+        physics.remove(rigid);
+        
+        var newShard = function(sceneObj, rigidObj) {
+            scene.bind(sceneObj);
+            physics.bind(rigidObj);
+        };
+        
+        // TODO: generate the appropriate sets of data for face/edge/verts
+        for (var i = 0; i < fracturePattern.length; i++) {
+            var fracMesh = fracturePattern[i].mesh;
+            var fracColl = fracturePattern[i].collision;
+            var fracPos = fracturePattern[i].position;
+            
+            // generate set of planes from the cell.
+            var cellPlanes = [];
+            for (var j = 0; j < fracMesh.faces.length; j++) {
+                var p1 = fracMesh.points[fracMesh.faces[j].points[0]].slice();
+                var p2 = fracMesh.points[fracMesh.faces[j].points[1]].slice();
+                var p3 = fracMesh.points[fracMesh.faces[j].points[2]].slice();
+                
+                // flips the normal if it's facing inward
+                var norm = cross3(sub3(p2, p1), sub3(p3, p1));
+                if (dot3(norm, sub3(center, p1)) < 0) {
+                    norm = mult3c(norm, -1);
+                }
+                
+                norm = normalize3(norm);
+                if (!containsNormal(cellPlanes, norm)) {
+                    cellPlanes.push({normal:norm, d:-dot3(norm, p1), p:p1});
+                }
+            }
+            
+            // copy 
+            for (var j = 0; j < cellPlanes.length; j++) {
+                // TODO: copy stuff into memory
+                
+                var outVertsCL;     // these will be length verts*3, and need to be converted back into array[3]?  Not sure how javascript stores 2d arrays.
+                var outFacesCL;
+                
+                // TODO: Construct new faces here
+                
+            }
+            addMeshToScene(outVertsCL, outFacesCL, mesh.name + "_" + i, [obj.position[0] + fracPos[0], obj.position[1] + fracPos[1], obj.position[2] + fracPos[2]]);
+        }
+    }
+    
     // Fractures the hit mesh using fracturePattern.  The geometry of the target mesh is
     //   approximated using its collision convex hull.
-    var fracture = function(ray, hit) {
+    var fracture_old = function(ray, hit) {
         var rigid = hit.rigidBody;
         var obj = rigid.sceneObject;
         var mesh = obj.getMesh();
@@ -660,7 +756,6 @@ function webGLStart() {
             
             console.log(o.getMesh().faces);
         };
-        console.log(mesh.faces);
         // TODO
         for (var i = 0; i < fracturePattern.length; i++) {
             var fracMesh = fracturePattern[i].mesh;
