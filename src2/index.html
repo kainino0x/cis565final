@@ -198,6 +198,7 @@ function loadFracturePattern() {
     for (var i = 0; i < 8; i++) {
         var astMesh = astModel.getSceneObject("Icosphere_cell_" + zpad(i)).getMesh();
         var astPos = astModel.getSceneObject("Icosphere_cell_" + zpad(i)).position;
+        astMesh.buildEdges();
         
         // Currently also saves in the collision just for debugging.
         var astCollision = new CubicVR.CollisionMap({
@@ -272,7 +273,7 @@ function flipEdge(e) {
 // extremely naive sequential implementation of intersection algorithm.
 function intersect(mesh, cell) {
     // compute 
-    var points = mesh.points;
+    var points = mesh.points.slice();
     var faces = [];
     var edges = [];
     
@@ -308,7 +309,7 @@ function intersect(mesh, cell) {
      * faces stores the indices of the vertices.
     */
     for (var i = 0; i < mesh.faces.length; i++) {
-        faces.push(mesh.faces[i].points);
+        faces.push(mesh.faces[i].points.slice());
         faces[i].culled = false;
         
         var faceEdges = [];
@@ -332,13 +333,13 @@ function intersect(mesh, cell) {
     // generate set of planes from the cell.
     var cellPlanes = [];
     for (var i = 0; i < cell.faces.length; i++) {
-        var p1 = cell.points[cell.faces[i].points[0]];
-        var p2 = cell.points[cell.faces[i].points[1]];
-        var p3 = cell.points[cell.faces[i].points[2]];
+        var p1 = cell.points[cell.faces[i].points[0]].slice();
+        var p2 = cell.points[cell.faces[i].points[1]].slice();
+        var p3 = cell.points[cell.faces[i].points[2]].slice();
         
         // flips the normal if it's facing inward
         var norm = cross3(sub3(p2, p1), sub3(p3, p1));
-        if (dot3(norm, sub3(center, p1)) > 0) {
+        if (dot3(norm, sub3(center, p1)) < 0) {
             norm = mult3c(norm, -1);
         }
         
@@ -424,7 +425,7 @@ function intersect(mesh, cell) {
                     faces[j][2] = e3[1];
                 } else {
                     newEdge = [e2[1], e1[1]];
-                    faces[j].edges[2] = edges.length;line 
+                    faces[j].edges[2] = edges.length;
                     faces[j][0] = e2[0];
                     faces[j][1] = e2[1];
                     faces[j][2] = e1[1];
@@ -517,9 +518,6 @@ function intersect(mesh, cell) {
             faces.push(newFace);
         }
     }
-
-    console.log(points);
-    console.log(faces);
     
     var newPoints = [];
     var newFaces = [];
@@ -531,8 +529,6 @@ function intersect(mesh, cell) {
             newPoints[j] = [p[0], p[1], p[2]];
             points_mapping[i] = j;
             j++;
-        } else {
-            console.log(points[i]);
         }
     }
     for (var i = 0, j = 0; i < faces.length; i++) {
@@ -542,8 +538,6 @@ function intersect(mesh, cell) {
                            points_mapping[f[1]],
                            points_mapping[f[2]]];
             j++;
-        } else {
-            console.log(faces[i]);
         }
     }
     
@@ -639,54 +633,12 @@ function webGLStart() {
     var fracture = function(ray, hit) {
         var rigid = hit.rigidBody;
         var obj = rigid.sceneObject;
-        var omesh = obj.getMesh();
-        omesh.buildEdges();
-
-        // Attempts to create a wireframe mesh based on the convex hull.
-
-
-        var fmesh = {};
-        fmesh.points = [[0,0,0],[1,0,0],[0,0,1]];
-        fmesh.faces = [{points:[0,1,2]}];
-
-        var isx = intersect(omesh, fmesh);
-        console.log(isx);
-
-        //var points_faces = doCL(cl, mesh.points, mesh.faces);
-        var points = isx.points;
-        var faces  = isx.faces;
-
-        // debug display: adds back a wireframe clone of the original object
-        var mesh = new CubicVR.Mesh({
-            name: "wireframe",
-            wireframe: true,
-            buildWireframe: true,
-            wireframeMaterial: {
-                color: [0.5, 1.0, 0.2]
-            }
-        });
-        mesh.build({
-            points: points,
-            faces: faces,
-            material: {
-                color: [0.5, 0.2, 0.2]
-            }
-        });
+        var mesh = obj.getMesh();
         mesh.buildEdges();
-        mesh.compile();
-        var meshobj = new CubicVR.SceneObject({
-                name: "wireframe",      
-                mesh:mesh,   
-                position:[obj.position[0], obj.position[1], obj.position[2]],   
-                rotation:[0,0,0],//obj.rotation.slice(0), //copy of the obj's rotation.
-                wireframe: true   
-            });   
-         
-        scene.bind(meshobj);
-
-        return;
         
-        // END: convex hull mesh creation
+        // Remove the original object.
+        scene.remove(obj);
+        physics.remove(rigid);
         
         var newShard = function(sceneObj, rigidObj) {
             scene.bind(sceneObj);
@@ -699,16 +651,31 @@ function webGLStart() {
             var fracColl = fracturePattern[i].collision;
             var fracPos = fracturePattern[i].position;
             
-            var intersection = intersect(mesh, fracMesh);
-            //console.log(intersection);
-            // TODO: take the returned {points:p, faces:f}, build mesh, and add to scene.
+            var isx = intersect(mesh, fracMesh);
+            console.log(isx);
             
             // Intersect each fracture pattern with hull to generate a new hull.
             // Alternatively, intersect mesh with obj.mesh to generate a new mesh.
-            fracMesh.buildEdges();
+            var m = new CubicVR.Mesh({
+                name: mesh.name + "_" + i,
+                wireframe: true,
+                buildWireframe: true,
+                wireframeMaterial: {
+                    color: [0.5, 1.0, 0.2]
+                }
+            });
+            m.build({
+                points: isx.points,
+                faces: isx.faces,
+                material: {
+                    color: [0.5, 0.2, 0.2]
+                }
+            });
+            m.buildEdges();
+            m.compile();
             var o = new CubicVR.SceneObject({
                 name: obj.name + "_" + i,   
-                mesh:fracMesh,
+                mesh: m,
                 position:[obj.position[0] + fracPos[0], obj.position[1] + fracPos[1], obj.position[2] + fracPos[2]],
                 rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
             });
@@ -717,7 +684,7 @@ function webGLStart() {
                 name: rigid.name + "_" + i,
                 type: "dynamic",
                 mass: 1,
-                collision: fracColl
+                collision: fracColl // TODO correct this
             });
             
             r.setLinearVelocity(rigid.getLinearVelocity());
@@ -727,10 +694,6 @@ function webGLStart() {
             newShard(o, r);
             //console.log(o);
         }
-        
-        // Remove the original object.
-        scene.remove(obj);
-        physics.remove(rigid);
     };
 
     mvc.setEvents({
