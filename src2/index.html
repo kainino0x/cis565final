@@ -452,10 +452,14 @@ function intersect(mesh, cell) {
                 newEdge2.state = 0;
                 
                 var newFace = [e2[0], e3[1], e2[1]];
-                newFace.edges = [faces[j].edges[1], edges.length, edges.length + 1]
+                newFace.edges = [faces[j].edges[idx2], edges.length, edges.length + 1]
                 newFace.culled = false;
                 
-                faces[j].edges[1] = edges.length + 1;
+                // update the old face.
+                faces[j].edges[idx2] = edges.length + 1;
+                faces[j][0] = e2[0];
+                faces[j][1] = e3[0];
+                faces[j][2] = e2[1];
                 
                 edges.push(newEdge);
                 newFaceEdges.push({edge:newEdge, index:edges.length - 1});
