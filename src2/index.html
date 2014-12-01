@@ -136,9 +136,9 @@ var fracturePattern;
 function generateObjects() {
     var result = [];
     
-    var astModel = CubicVR.loadCollada("models/icosphere.dae", "models/");
+    var astModel = CubicVR.loadCollada("models/tet.dae", "models/");
     // Add a ast to mesh, size 1.0
-    var astObj = astModel.getSceneObject("Icosphere");
+    var astObj = astModel.getSceneObject("tet");
     
     var astMesh = astObj.getMesh();
     
@@ -192,12 +192,12 @@ function zpad(number) {
 function loadFracturePattern() {
     var result = [];
 
-    var astModel = CubicVR.loadCollada("models/icoshatter.dae", "models/");
+    var astModel = CubicVR.loadCollada("models/tet1.dae", "models/");
 
     // TODO: make this more flexible with naming, or replace with our own voronoi decomp.
-    for (var i = 0; i < 8; i++) {
-        var astMesh = astModel.getSceneObject("Icosphere_cell_" + zpad(i)).getMesh();
-        var astPos = astModel.getSceneObject("Icosphere_cell_" + zpad(i)).position;
+    for (var i = 0; i < 1; i++) {
+        var astMesh = astModel.getSceneObject("tet1").getMesh();
+        var astPos = astModel.getSceneObject("tet1").position;
         astMesh.buildEdges();
         
         // Currently also saves in the collision just for debugging.
@@ -673,6 +673,7 @@ function webGLStart() {
             // Alternatively, intersect mesh with obj.mesh to generate a new mesh.
             var m = new CubicVR.Mesh({
                 name: mesh.name + "_" + i,
+                //wireframe: true,
                 buildWireframe: true,
                 wireframeMaterial: {
                     color: [0.5, 1.0, 0.2]
