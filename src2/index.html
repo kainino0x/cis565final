@@ -277,7 +277,11 @@ function intersect(mesh, cell) {
     var faces = [];
     var edges = [];
     
-    var center = [0,0,0];   // center of volume, average of all vertices.  Used to find the correct face normal.
+    var center = [0,0,0];   // center of volume, average of all vertices.  Used to find the correct clipping face normal.
+    for (var i = 0; i < cell.points.length; i++) {
+        center = [center[0] + cell.points[i][0], center[1] + cell.points[i][1], center[2] + cell.points[i][2]];
+    }
+    center = [center[0]/points.length, center[1]/points.length, center[2]/points.length];
     
     // Generates the array of points.
     /* points is an float[3] with properties:
@@ -286,9 +290,7 @@ function intersect(mesh, cell) {
     */
     for (var i = 0; i < points.length; i++) {
         points[i].culled = false;
-        center = [center[0] + points[i][0], center[1] + points[i][1], center[2] + points[i][2]];
     }
-    center = [center[0]/points.length, center[1]/points.length, center[2]/points.length];
     
     // NOTE: REMEMBER TO BUILD THE EDGES WHEN ADDING NEW MESHES!
     // Generates the array of edges.
@@ -704,6 +706,11 @@ function webGLStart() {
             var fracColl = fracturePattern[i].collision;
             var fracPos = fracturePattern[i].position;
             
+            var center = [0,0,0];   // center of volume, average of all vertices.  Used to find the correct clipping face normal.
+            for (var i = 0; i < cell.points.length; i++) {
+                center = [center[0] + cell.points[i][0], center[1] + cell.points[i][1], center[2] + cell.points[i][2]];
+            }
+            center = [center[0]/points.length, center[1]/points.length, center[2]/points.length];
             // generate set of planes from the cell.
             var cellPlanes = [];
             for (var j = 0; j < fracMesh.faces.length; j++) {
@@ -826,7 +833,7 @@ function webGLStart() {
 
             if (keyState[CubicVR.keyboard.CTRL]) {
                 if (result) {
-                    fracture(rayTo, result);
+                    fracture_old(rayTo, result);
                 }
             } else if (result && !pickConstraint) {
                 pickConstraint = new CubicVR.Constraint({
