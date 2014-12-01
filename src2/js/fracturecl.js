@@ -10,6 +10,12 @@ function loadKernel(id) {
     return kernelSource;
 }
 
+function index3(array, index) {
+    return [array[4 * index + 0],
+            array[4 * index + 1],
+            array[4 * index + 2]];
+}
+
 function clInit() {
     var ctx = webcl.createContext();
     var kernelSrc = loadKernel("fracturecl");
