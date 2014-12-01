@@ -41,6 +41,49 @@ function clInit() {
 
 function clSetCells(cl, cells) {
     // TODO: create all of the appropriate `planes` buffers
+    var planesPerCell = [];
+
+    for (var i = 0; i < cells.length; i++) {
+        var cell = cells[i].mesh;
+        var center = cells[i].position;
+
+        var cellPlanes = cellToPlanes(cell, center);
+        planesPerCell.push(cellPlanes);
+    }
+
+    var cellsPerIndex = [];
+    for (var i = 0; true; i++) {
+        var planescurr = [];
+        for (var j = 0; j < planesPerCell.length; j++) {
+            var ap = planesPerCell[j];
+            if (i < ap.length) {
+                planescurr.push(ap[i]);
+            }
+        }
+        if (planescurr.length > 0) {
+            cellsPerIndex.push(planescurr);
+            break;
+        }
+    }
+
+    var cpiBuffers = [];
+    for (var i = 0; i < cellsPerIndex.length; i++) {
+        var cpi = cellsPerIndex[i];
+        var arr = new Float32Array(cpi.length * 4);
+        for (var j = 0; j < cpi.length; j++) {
+            var cj = cpi[j];
+            arr[3 * j + 0] = cj.normal.x;
+            arr[3 * j + 1] = cj.normal.y;
+            arr[3 * j + 2] = cj.normal.z;
+            arr[3 * j + 3] = cj.d;
+        }
+
+        var buf = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, arr.length * 4);
+        cl.queue.enqueueWriteBuffer(buf, false, 0, arr.length * 4, arr);
+        cpiBuffers.push(buf);
+    }
+
+    cl.cellBuffers = cpiBuffers;
 }
 
 function clFracture(cl, vertices, faces) {

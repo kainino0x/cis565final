@@ -155,6 +155,27 @@ function flipEdge(e) {
     return edge;
 }
 
+function cellToPlanes(cell) {
+    var cellPlanes = [];
+    for (var i = 0; i < 1/*cell.faces.length*/; i++) {
+        var p1 = cell.points[cell.faces[i].points[0]].slice();
+        var p2 = cell.points[cell.faces[i].points[1]].slice();
+        var p3 = cell.points[cell.faces[i].points[2]].slice();
+        
+        // flips the normal if it's facing inward
+        var norm = cross3(sub3(p2, p1), sub3(p3, p1));
+        if (dot3(norm, sub3(center, p1)) < 0) {
+            norm = mult3c(norm, -1);
+        }
+        
+        norm = normalize3(norm);
+        if (!containsNormal(cellPlanes, norm)) {
+            cellPlanes.push({normal:norm, d:-dot3(norm, p1), p:p1});
+        }
+    }
+    return cellPlanes;
+}
+
 // extremely naive sequential implementation of intersection algorithm.
 function intersect(mesh, cell) {
     // compute 
@@ -219,23 +240,7 @@ function intersect(mesh, cell) {
     }
     
     // generate set of planes from the cell.
-    var cellPlanes = [];
-    for (var i = 0; i < 1/*cell.faces.length*/; i++) {
-        var p1 = cell.points[cell.faces[i].points[0]].slice();
-        var p2 = cell.points[cell.faces[i].points[1]].slice();
-        var p3 = cell.points[cell.faces[i].points[2]].slice();
-        
-        // flips the normal if it's facing inward
-        var norm = cross3(sub3(p2, p1), sub3(p3, p1));
-        if (dot3(norm, sub3(center, p1)) < 0) {
-            norm = mult3c(norm, -1);
-        }
-        
-        norm = normalize3(norm);
-        if (!containsNormal(cellPlanes, norm)) {
-            cellPlanes.push({normal:norm, d:-dot3(norm, p1), p:p1});
-        }
-    }
+    var cellPlanes = cellToPlanes(cell, center);
     
     // now clip mesh on each plane.
     for (var i = cellPlanes.length - 1; i >= 0; --i) {
