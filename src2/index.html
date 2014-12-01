@@ -369,7 +369,7 @@ function intersect(mesh, cell) {
                 edges[j].state = -1;
             } else if (p1.culled) {
                 edges[j].state = 1;
-            } else if (p2.culled) {
+                
                 var temp = edges[j][0];
                 edges[j][0] = edges[j][1];
                 edges[j][1] = temp;
@@ -377,10 +377,10 @@ function intersect(mesh, cell) {
                 var tempp = p1;
                 p1 = p2;
                 p2 = tempp;
-
+            } else if (p2.culled) {
                 edges[j].state = 1;
             } else {
-                // do nothing.
+                edges[j].state = 0;
             }
             
             // Calculate intersection for new point
@@ -413,12 +413,21 @@ function intersect(mesh, cell) {
                 if (e1.state == -1) {
                     newEdge = [e2[1], e3[1]];
                     faces[j].edges[0] = edges.length;
+                    faces[j][0] = e2[0];
+                    faces[j][1] = e2[1];
+                    faces[j][2] = e3[1];
                 } else if (e2. state == -1) {
                     newEdge = [e1[1], e3[1]];
                     faces[j].edges[1] = edges.length;
+                    faces[j][0] = e1[0];
+                    faces[j][1] = e1[1];
+                    faces[j][2] = e3[1];
                 } else {
                     newEdge = [e2[1], e1[1]];
-                    faces[j].edges[2] = edges.length;
+                    faces[j].edges[2] = edges.length;line 
+                    faces[j][0] = e2[0];
+                    faces[j][1] = e2[1];
+                    faces[j][2] = e1[1];
                 }
                 
                 newEdge.state = 0;
