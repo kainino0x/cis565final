@@ -374,16 +374,20 @@ function intersect(mesh, cell) {
             }
         }
         // sort the newFaceEdges into connected order (arbitrarily clockwise/counterclockwise) so we can triangulate it more easily.
+
         for (var j = newFaceEdges.length - 2; j >= 0; j--) {
             for (var k = j; k >= 0; k--) {
                 if (newFaceEdges[k].edge[1] == newFaceEdges[j + 1].edge[0] || newFaceEdges[k].edge[0] == newFaceEdges[j + 1].edge[0]) {
                     // flip the edge if it's backwards.  We want a-b b-c c-d
                     var temp = newFaceEdges[j];
-                    if (newFaceEdges[k].edge[0] == newFaceEdges[j + 1].edge[1]) {
+                    if (newFaceEdges[k].edge[0] == newFaceEdges[j + 1].edge[0]) {
                         newFaceEdges[k].edge = flipEdge(newFaceEdges[k].edge);
                     }
                     newFaceEdges[j] = newFaceEdges[k];
-                    newFaceEdges[k] = temp;
+                    if (k != j) {
+                        newFaceEdges[k] = temp;
+                    }
+                    break;
                 }
             }
         }
@@ -396,7 +400,7 @@ function intersect(mesh, cell) {
                 newEdge.state = 0;
                 edges.push(newEdge);
                 
-                var newFace = [lastEdge.edge[0], newFaceEdges[j].edge[0], newFaceEdges[j].edge[1]];
+                var newFace = [lastEdge.edge[0], lastEdge.edge[1], newFaceEdges[j].edge[1]];
                 newFace.edges = [lastEdge.index, newFaceEdges[j].index, edges.length - 1];
                 newFace.culled = false;
                 // the normals for these faces are all just the negative normal of the plane.
@@ -408,7 +412,7 @@ function intersect(mesh, cell) {
                 lastEdge.index = edges.length - 1;
             }
             
-            var newFace = [lastEdge.edge[0], lastEdge.edge[1], newFaceEdges[newFaceEdges.length - 1].edge[0]];
+            var newFace = [lastEdge.edge[0], lastEdge.edge[1], newFaceEdges[newFaceEdges.length - 2].edge[1]];
             newFace.edges = [lastEdge.index, newFaceEdges[newFaceEdges.length - 2].index, newFaceEdges[newFaceEdges.length - 1].index];
             newFace.culled = false;
             newFace.normal = mult3c(cellPlanes[i].normal, -1);
