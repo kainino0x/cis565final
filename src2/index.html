@@ -396,7 +396,7 @@ function intersect(mesh, cell) {
                 newEdge.state = 0;
                 edges.push(newEdge);
                 
-                var newFace = [lastEdge.edge[0], newFaceEdges[j].edge[0], newFaceEdges[j].edge[1]];
+                var newFace = [lastEdge.edge[0], lastEdge.edge[1], newFaceEdges[j].edge[1]];
                 newFace.edges = [lastEdge.index, newFaceEdges[j].index, edges.length - 1];
                 newFace.culled = false;
                 // the normals for these faces are all just the negative normal of the plane.
@@ -408,7 +408,7 @@ function intersect(mesh, cell) {
                 lastEdge.index = edges.length - 1;
             }
             
-            var newFace = [lastEdge.edge[0], lastEdge.edge[1], newFaceEdges[newFaceEdges.length - 1].edge[0]];
+            var newFace = [lastEdge.edge[0], lastEdge.edge[1], newFaceEdges[newFaceEdges.length - 2].edge[1]];
             newFace.edges = [lastEdge.index, newFaceEdges[newFaceEdges.length - 2].index, newFaceEdges[newFaceEdges.length - 1].index];
             newFace.culled = false;
             newFace.normal = mult3c(cellPlanes[i].normal, -1);
