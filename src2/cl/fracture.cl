@@ -3,13 +3,21 @@ struct Tri {
 };
 
 kernel void fracture(
+        // Input mesh triangles
         /*0*/              uint  tricount,
         /*1*/ global struct Tri *tris,
+
+        // Fracture pattern planes
         /*2*/              uint  planecount,
         /*3*/ global     float4 *planes,     // Nx Ny Nz d
-        /*4*/ global       bool *triexist,   // len is tricount*2
+        //    ^ TODO: can this be constant instead of global?
+
+        // Output mesh triangles
+        /*4*/ global       uint *triexist,   // len is tricount*2
         /*5*/ global struct Tri *triout,     // len is tricount*2
-        /*6*/ global       bool *newexist,   // len is tricount
+
+        // Output new vertices for new face
+        /*6*/ global       uint *newexist,   // len is tricount
         /*7*/ global     float4 *newout      // len is tricount*2
         ) {
     uint i_tri = get_global_id(0);
