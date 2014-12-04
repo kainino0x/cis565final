@@ -133,7 +133,28 @@ function makeFace(points) {
     return tris;
 }
 
-function clOutputToInput(cl, iteration, oldtricount) {
+function clSetupArgs(cl, iteration, arrtris) {
+    var tricount = arrtris.length / 12;
+
+    cl.buftris = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, arrtris.length * 4 * 4);
+    cl.queue.enqueueWriteBuffer(buftris, false, 0, arrtris.length * 4 * 4, arrtris);
+
+    cl.buftriexist = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2      * 4);
+    cl.buftriout   = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2 * 12 * 4);
+    cl.bufnewexist = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount          * 4);
+    cl.bufnewout   = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2 *  4 * 4);
+
+    cl.kernel.setArg(0, new Uint32Array([tricount]));
+    cl.kernel.setArg(1, cl.buftris);
+    cl.kernel.setArg(2, new Uint32Array([cl.cellBuffers[iteration].count]));
+    cl.kernel.setArg(3, cl.cellBuffers[iteration].buf);
+    cl.kernel.setArg(4, cl.buftriexist);
+    cl.kernel.setArg(5, cl.buftriout);
+    cl.kernel.setArg(6, cl.bufnewexist);
+    cl.kernel.setArg(7, cl.bufnewout);
+}
+
+function clOutputToInput(cl, oldtricount) {
     buftris.release();
 
     var arrtriexist = new  Uint32Array(oldtricount * 2);
@@ -155,26 +176,8 @@ function clOutputToInput(cl, iteration, oldtricount) {
     var newtris = makeFace(news);
     tris.push.apply(newtris);  // extend tris
 
-    var tricount = tris.length / 12;
-    var trisarr = new Float32Array(tris);
-    cl.buftris = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, trisarr.length * 4 * 4);
-    cl.queue.enqueueWriteBuffer(buftris, false, 0, trisarr.length * 4 * 4, trisarr);
-
-    cl.buftriexist = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2      * 4);
-    cl.buftriout   = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2 * 12 * 4);
-    cl.bufnewexist = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount          * 4);
-    cl.bufnewout   = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2 *  4 * 4);
-
-    cl.kernel.setArg(0, new Uint32Array([tricount]));
-    cl.kernel.setArg(1, cl.buftris);
-    cl.kernel.setArg(2, new Uint32Array([cl.cellBuffers[iteration].count]));
-    cl.kernel.setArg(3, cl.cellBuffers[iteration].buf);
-    cl.kernel.setArg(4, cl.buftriexist);
-    cl.kernel.setArg(5, cl.buftriout);
-    cl.kernel.setArg(6, cl.bufnewexist);
-    cl.kernel.setArg(7, cl.bufnewout);
-
-    return tricount;
+    var arrtris = new Float32Array(tris);
+    return arrtris;
 }
 
 function clFracture(cl, vertices, faces) {
@@ -192,7 +195,14 @@ function clFracture(cl, vertices, faces) {
     }
 
     for (var i = 0; i < cl.cellBuffers.length; i++) {
-        var cb = cl.cellBuffers[i];
+        clSetupArgs(cl, i, triarr);
+
+        var localWS = [1, 1];
+        var globalWS = [tricount, cl.cellBuffers[i].count];
+        cl.queue.enqueueNDRangeKernel(cl.kernel, globalWS.length, null, globalWS, localWS);
+
+        triarr = clOutputToInput(cl, tricount);
+        tricount = triarr.length / 12;
     }
 
     /*
