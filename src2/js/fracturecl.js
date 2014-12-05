@@ -57,6 +57,8 @@ function clSetCells(cl, cells) {
             var ap = planesPerCell[j];
             if (i < ap.length) {
                 planescurr.push(ap[i]);
+            } else {
+                planescurr.push({normal: [0, 0, 0], d: 0});
             }
         }
         if (planescurr.length > 0) {
@@ -71,9 +73,9 @@ function clSetCells(cl, cells) {
         var arr = new Float32Array(cpi.length * 4);
         for (var j = 0; j < cpi.length; j++) {
             var cj = cpi[j];
-            arr[3 * j + 0] = cj.normal.x;
-            arr[3 * j + 1] = cj.normal.y;
-            arr[3 * j + 2] = cj.normal.z;
+            arr[3 * j + 0] = cj.normal[0];
+            arr[3 * j + 1] = cj.normal[1];
+            arr[3 * j + 2] = cj.normal[2];
             arr[3 * j + 3] = cj.d;
         }
 
