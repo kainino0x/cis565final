@@ -453,47 +453,6 @@ function intersect(mesh, cell) {
     return {points: newPoints, faces: newFaces};
 };
 
-// Not sure if this function has the correct scope to add stuff to the scene.
-function addMeshToScene(verts, faces, name, position) {
-    // Intersect each fracture pattern with hull to generate a new hull.
-    // Alternatively, intersect mesh with obj.mesh to generate a new mesh.
-    var m = new CubicVR.Mesh({
-        name: name,
-        buildWireframe: true,
-        wireframeMaterial: {
-            color: [0.5, 1.0, 0.2]
-        }
-    });
-    m.build({
-        points: verts,
-        faces: faces,
-        material: {
-            color: [0.5, 0.2, 0.2]
-        }
-    });
-    m.buildEdges();
-    m.calcNormals();
-    m.compile();
-    var o = new CubicVR.SceneObject({
-        name: name,   
-        mesh: m,
-        position: position,
-        rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
-    });
-    // Need to pass in the linear and angular velocity as well.
-    var r = new CubicVR.RigidBody(o, {
-        name: name,
-        type: "dynamic",
-        mass: 1,
-        collision: fracColl // TODO correct this
-    });
-    r.setLinearVelocity(rigid.getLinearVelocity());
-    // TODO: Find a solution to conserving angular velocity along the original axis of rotation.  Simply passing it through is incorrect as it spins around a local axis.
-    r.setAngularVelocity(rigid.getAngularVelocity());
-    
-    newShard(o, r);
-}
-
 function webGLStart() {
     // by default generate a full screen canvas with automatic resize
     var gl = CubicVR.init();
@@ -581,6 +540,61 @@ function webGLStart() {
     var pickConstraint = null;
     var pickDist = 0;
 
+    var addMeshToScene = function(name, obj, rigid, fracPos, isx) {
+        // Create new mesh
+        // Intersect each fracture pattern with hull to generate a new hull.
+        // Alternatively, intersect mesh with obj.mesh to generate a new mesh.
+        var m = new CubicVR.Mesh({
+            name: name,
+            //wireframe: true,
+            buildWireframe: true,
+            wireframeMaterial: {
+                color: [0.5, 1.0, 0.2]
+            }
+        });
+        m.build({
+            points: isx.points,
+            faces: isx.faces,
+            material: {
+                color: [0.5, 0.2, 0.2]
+            }
+        });
+        m.buildEdges();
+        m.calcNormals();
+        m.compile();
+
+        // Create new scene object
+        var o = new CubicVR.SceneObject({
+            name: obj.name + "_" + i,   
+            mesh: m,
+            wireframe: true,
+            position:[obj.position[0] + fracPos[0], obj.position[1] + fracPos[1], obj.position[2] + fracPos[2]],
+            rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
+        });
+
+        // Create new collision map
+        var coll = new CubicVR.CollisionMap({
+            type: CubicVR.enums.collision.shape.CONVEX_HULL,
+            mesh: m,
+        });
+
+        // Create new rigid body
+        // Need to pass in the linear and angular velocity as well.
+        var r = new CubicVR.RigidBody(o, {
+            name: rigid.name + "_" + i,
+            type: "dynamic",
+            mass: 1,
+            collision: coll
+        });
+        r.setLinearVelocity(rigid.getLinearVelocity());
+        // TODO: Find a solution to conserving angular velocity along the original axis of rotation.  Simply passing it through is incorrect as it spins around a local axis.
+        r.setAngularVelocity(rigid.getAngularVelocity());
+
+        scene.bind(o);
+        physics.bind(r);
+        //console.log(o);
+    };
+
     var fracture = function(ray, hit) {
         var rigid = hit.rigidBody;
         var obj = rigid.sceneObject;
@@ -591,20 +605,13 @@ function webGLStart() {
         // Remove the original object.
         scene.remove(obj);
         physics.remove(rigid);
-        
-        var newShard = function(sceneObj, rigidObj) {
-            scene.bind(sceneObj);
-            physics.bind(rigidObj);
-        };
 
         var fractured = clFracture(cl, mesh.points, mesh.faces);
 
         for (var i = 0; i < fractured.length; i++) {
-            addMeshToScene(fractured[i].points, fractured[i].faces,
-                    mesh.name + "_" + i,
-                    [0, 0, 0]);
+            var fracPos = [0, 0, 0]; // TODO
+            addMeshToScene(mesh.name + "_" + i, obj, rigid, fracPos, fractured[i]);
         }
-            //addMeshToScene(outVertsCL, outFacesCL, mesh.name + "_" + i, [obj.position[0] + fracPos[0], obj.position[1] + fracPos[1], obj.position[2] + fracPos[2]]);
     }
     
     // Fractures the hit mesh using fracturePattern.  The geometry of the target mesh is
@@ -619,72 +626,14 @@ function webGLStart() {
         // Remove the original object.
         scene.remove(obj);
         physics.remove(rigid);
-        
-        var newShard = function(sceneObj, rigidObj) {
-            scene.bind(sceneObj);
-            physics.bind(rigidObj);
-            
-            //console.log(o.getMesh().faces);
-        };
-        // TODO
+
         for (var i = 0; i < fracturePattern.length; i++) {
             var fracMesh = fracturePattern[i].mesh;
             var fracColl = fracturePattern[i].collision;
             var fracPos = fracturePattern[i].position;
             
             var isx = intersect(mesh, fracMesh);
-            
-            // Create new mesh
-            // Intersect each fracture pattern with hull to generate a new hull.
-            // Alternatively, intersect mesh with obj.mesh to generate a new mesh.
-            var m = new CubicVR.Mesh({
-                name: mesh.name + "_" + i,
-                //wireframe: true,
-                buildWireframe: true,
-                wireframeMaterial: {
-                    color: [0.5, 1.0, 0.2]
-                }
-            });
-            m.build({
-                points: isx.points,
-                faces: isx.faces,
-                material: {
-                    color: [0.5, 0.2, 0.2]
-                }
-            });
-            m.buildEdges();
-            m.calcNormals();
-            m.compile();
-
-            // Create new scene object
-            var o = new CubicVR.SceneObject({
-                name: obj.name + "_" + i,   
-                mesh: m,
-                wireframe: true,
-                position:[obj.position[0] + fracPos[0], obj.position[1] + fracPos[1], obj.position[2] + fracPos[2]],
-                rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
-            });
-
-            // Create new collision map
-            var coll = new CubicVR.CollisionMap({
-                type: CubicVR.enums.collision.shape.CONVEX_HULL,
-                mesh: m,
-            });
-
-            // Create new rigid body
-            // Need to pass in the linear and angular velocity as well.
-            var r = new CubicVR.RigidBody(o, {
-                name: rigid.name + "_" + i,
-                type: "dynamic",
-                mass: 1,
-                collision: coll // TODO correct this
-            });
-            r.setLinearVelocity(rigid.getLinearVelocity());
-            // TODO: Find a solution to conserving angular velocity along the original axis of rotation.  Simply passing it through is incorrect as it spins around a local axis.
-            r.setAngularVelocity(rigid.getAngularVelocity());
-            
-            newShard(o, r);
-            //console.log(o);
+            addMeshToScene(mesh.name + "_" + i, obj, rigid, fracPos, isx);
         }
     };
 
