@@ -53,16 +53,19 @@ function clSetCells(cl, cells) {
     var cellsPerIndex = [];
     for (var i = 0; true; i++) {
         var planescurr = [];
+        var nonempty = false;
         for (var j = 0; j < planesPerCell.length; j++) {
             var ap = planesPerCell[j];
             if (i < ap.length) {
                 planescurr.push(ap[i]);
+                nonempty = true;
             } else {
                 planescurr.push({normal: [0, 0, 0], d: 0});
             }
         }
-        if (planescurr.length > 0) {
+        if (nonempty) {
             cellsPerIndex.push(planescurr);
+        } else {
             break;
         }
     }
@@ -79,7 +82,7 @@ function clSetCells(cl, cells) {
             arr[4 * j + 3] = cj.d;
         }
 
-        var buf = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, arr.length * 4);
+        var buf = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, arr.byteLength);
         cl.queue.enqueueWriteBuffer(buf, false, 0, arr.byteLength, arr);
         cpiBuffers.push(buf);
     }

@@ -28,7 +28,11 @@ kernel void fracture(
     int cell = tricells[index];
     float4 _pla = planes[cell];
     if (_pla.x == 0 && _pla.y == 0 && _pla.z == 0) {
-        // this cell doesn't have a plane on this iteration
+        // this cell doesn't have a plane on this iteration; do nothing
+        trioutcells[2 * index] = cell;
+        triout[index] = tris[index];
+        trioutcells[2 * index + 1] = -1;
+        newoutcells[index] = -1;
         return;
     }
     float3 pN = _pla.xyz;
