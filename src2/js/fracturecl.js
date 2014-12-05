@@ -87,16 +87,18 @@ function clSetCells(cl, cells) {
     cl.cellBuffers = cpiBuffers;
 }
 
-function floatNcompact(N, exist, val) {
-    var o = [];
-    for (var i = 0; i < exist.length; i++) {
-        if (exist[i]) {
+function floatNcompact(N, index, val) {
+    var indices = [];
+    var values = [];
+    for (var i = 0; i < index.length; i++) {
+        if (index[i] != -1) {
+            indices.push(index[i]);
             for (var n = 0; n < N; n++) {
-                o.push(val[i * N + n]);
+                values.push(val[i * N + n]);
             }
         }
     }
-    return o;
+    return {indices: indices, values: values};
 }
 
 function pushfloat4(arr, val) {
@@ -106,33 +108,66 @@ function pushfloat4(arr, val) {
     arr.push(0);
 }
 
-function makeFace(points) {
-    var orig = [points[0], points[1], points[2]];
-    var first = normalize3(sub3([points[4], points[5], points[6]], orig));
-    var sorted = [];
-    for (var i = 4; i < points.length; i += 4) {
-        var p = [points[i], points[i + 1], points[i + 2]];
-        var rel = sub3(p, orig);
-        if (length3(rel) > 0.001) {
-            rel = normalize3(rel);
-            var cosx = Math.acos(dot3(rel, first));
-            sorted.push({cosx: cosx, p: p});
+function makeFace(indices, allpoints) {
+    var lastidx = -1;
+    var faces = [];
+    for (var i = 0; i < indices.length; i++) {
+        var idx = indices[i];
+        var f = faces[idx];
+        if (!f) {
+            f = faces[idx] = [];
         }
-    }
-    sorted.sort(function(a, b) { return a.cosx - b.cosx; });
 
-    var tris = [];
-    var oldp = orig;
-    for (var i = 0; i < sorted.length; i++) {
-        var p = sorted[i].p;
-        if (length3(sub3(p, orig)) > 0.001) {
-            pushfloat4(tris, orig);
-            pushfloat4(tris, oldp);
-            pushfloat4(tris, p);
-            oldp = p;
+        // save the current two points into the correct face
+        var p1 = [points[i * 4 + 0],
+                  points[i * 4 + 1],
+                  points[i * 4 + 2]];
+        var p2 = [points[i * 4 + 4],
+                  points[i * 4 + 5],
+                  points[i * 4 + 6]];
+        f.push(p1, p2);
+
+        lastidx = i;
+    }
+
+    var idxout = [];
+    var values = [];
+    for (var iface = 0; iface < faces.length; iface++) {
+        var f = faces[iface];
+
+        // sort the face
+        var orig = f[0];
+        var first = normalize3(sub3(f[1], orig));
+        var sorted = [ {cosx: 0, p: f[1]} ];
+        for (var i = 2; i < f.length; i++) {
+            var p = f[i];
+            var rel = sub3(p, orig);
+            if (length3(rel) > 0.001) {
+                rel = normalize3(rel);
+                var cosx = Math.acos(dot3(rel, first));
+                sorted.push({cosx: cosx, p: p});
+            }
+        }
+        sorted.sort(function(a, b) { return a.cosx - b.cosx; });
+
+        // triangulate the face and save it
+        var oldp = orig;
+        for (var i = 0; i < sorted.length; i++) {
+            var p = sorted[i].p;
+            // remove duplicates
+            if (length3(sub3(p, oldp)) > 0.001) {
+                // save the cell index
+                idxout.push(iface);
+                // and the three points
+                pushfloat4(values, orig);
+                pushfloat4(values, oldp);
+                pushfloat4(values, p);
+                oldp = p;
+            }
         }
     }
-    return tris;
+
+    return {indices: idxout, values: values};
 }
 
 function clSetupArgs(cl, iteration, arrtris) {
@@ -172,10 +207,18 @@ function clOutputToInput(cl, oldtricount) {
     cl.bufnewexist.release();
     cl.bufnewout  .release();
 
-    var tris = floatNcompact(12, triexistarr, trioutarr);
-    var news = floatNcompact( 8, newexistarr, newoutarr);
+    var tmp;
+    tmp = floatNcompact(12, triexistarr, trioutarr);
+    var tricells = tmp.indices;
+    var tris = tmp.values;
+    tmp = floatNcompact( 8, newexistarr, newoutarr);
+    var newcells = tmp.indices;
+    var news = tmp.values;
 
-    var newtris = makeFace(news);
+    tmp = makeFace(newcells, news);
+    var newtricells = tmp.indices;
+    var newtris = tmp.values;
+    tricells.push.apply(newtricells);  // extend tricells
     tris.push.apply(newtris);  // extend tris
 
     var arrtris = new Float32Array(tris);
@@ -199,8 +242,8 @@ function clFracture(cl, vertices, faces) {
     for (var i = 0; i < cl.cellBuffers.length; i++) {
         clSetupArgs(cl, i, triarr);
 
-        var localWS = [1, 1];
-        var globalWS = [tricount, cl.cellBuffers[i].count];
+        var localWS = [1];
+        var globalWS = [tricount * _];
         cl.queue.enqueueNDRangeKernel(cl.kernel, globalWS.length, null, globalWS, localWS);
 
         triarr = clOutputToInput(cl, tricount);

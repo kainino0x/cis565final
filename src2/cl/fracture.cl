@@ -9,7 +9,7 @@ kernel void fracture(
 
         // Input mesh triangles (initially, one copy per cell)
         /*1*/              uint  tricount,
-        /*2*/ global       uint *tricells,
+        /*2*/ global        int *tricells,
         /*3*/ global struct Tri *tris,
 
         // Output mesh triangles
@@ -33,4 +33,5 @@ kernel void fracture(
     // TODO: perform plane-triangle clip
 
     // TODO: output one or two triangles depending on the result
+    //     * also output zero or two new points
 }
