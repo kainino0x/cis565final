@@ -283,7 +283,8 @@ function clFracture(cl, vertices, faces) {
                            cl.arrtris[off + 1],
                            cl.arrtris[off + 2]]);
         }
-        c.faces.push([i * 3, i * 3 + 1, i * 3 + 2]);
+        var ci = c.faces.length * 3;
+        c.faces.push([ci, ci + 1, ci + 2]);
     }
 
     return cellfaces;
