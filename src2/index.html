@@ -420,7 +420,7 @@ function intersect(mesh, cell) {
         }
     }
     
-    console.log(faces);
+    //console.log(faces);
     var newPoints = [];
     var newFaces = [];
     // TODO: iterate through points and faces, pushing the non-culled ones into newPoints/Faces, and updating the face indices appropriately.
@@ -576,6 +576,7 @@ function webGLStart() {
     spawnObjects(scene,physics,objlist);
 
     fracturePattern = loadFracturePattern();
+    clSetCells(cl, fracturePattern);
     
     var pickConstraint = null;
     var pickDist = 0;
@@ -595,49 +596,15 @@ function webGLStart() {
             scene.bind(sceneObj);
             physics.bind(rigidObj);
         };
-        
-        // TODO: generate the appropriate sets of data for face/edge/verts
-        for (var i = 0; i < fracturePattern.length; i++) {
-            var fracMesh = fracturePattern[i].mesh;
-            var fracColl = fracturePattern[i].collision;
-            var fracPos = fracturePattern[i].position;
-            
-            var center = [0,0,0];   // center of volume, average of all vertices.  Used to find the correct clipping face normal.
-            for (var i = 0; i < cell.points.length; i++) {
-                center = [center[0] + cell.points[i][0], center[1] + cell.points[i][1], center[2] + cell.points[i][2]];
-            }
-            center = [center[0]/points.length, center[1]/points.length, center[2]/points.length];
-            // generate set of planes from the cell.
-            var cellPlanes = [];
-            for (var j = 0; j < fracMesh.faces.length; j++) {
-                var p1 = fracMesh.points[fracMesh.faces[j].points[0]].slice();
-                var p2 = fracMesh.points[fracMesh.faces[j].points[1]].slice();
-                var p3 = fracMesh.points[fracMesh.faces[j].points[2]].slice();
-                
-                // flips the normal if it's facing inward
-                var norm = cross3(sub3(p2, p1), sub3(p3, p1));
-                if (dot3(norm, sub3(center, p1)) < 0) {
-                    norm = mult3c(norm, -1);
-                }
-                
-                norm = normalize3(norm);
-                if (!containsNormal(cellPlanes, norm)) {
-                    cellPlanes.push({normal:norm, d:-dot3(norm, p1), p:p1});
-                }
-            }
-            
-            // copy 
-            for (var j = 0; j < cellPlanes.length; j++) {
-                // TODO: copy stuff into memory
-                
-                var outVertsCL;     // these will be length verts*3, and need to be converted back into array[3]?  Not sure how javascript stores 2d arrays.
-                var outFacesCL;
-                
-                // TODO: Construct new faces here
-                
-            }
-            addMeshToScene(outVertsCL, outFacesCL, mesh.name + "_" + i, [obj.position[0] + fracPos[0], obj.position[1] + fracPos[1], obj.position[2] + fracPos[2]]);
+
+        var fractured = clFracture(cl, mesh.points, mesh.faces);
+
+        for (var i = 0; i < fractured.length; i++) {
+            addMeshToScene(fractured[i].points, fractured[i].faces,
+                    mesh.name + "_" + i,
+                    [0, 0, 0]);
         }
+            //addMeshToScene(outVertsCL, outFacesCL, mesh.name + "_" + i, [obj.position[0] + fracPos[0], obj.position[1] + fracPos[1], obj.position[2] + fracPos[2]]);
     }
     
     // Fractures the hit mesh using fracturePattern.  The geometry of the target mesh is
@@ -657,7 +624,7 @@ function webGLStart() {
             scene.bind(sceneObj);
             physics.bind(rigidObj);
             
-            console.log(o.getMesh().faces);
+            //console.log(o.getMesh().faces);
         };
         // TODO
         for (var i = 0; i < fracturePattern.length; i++) {

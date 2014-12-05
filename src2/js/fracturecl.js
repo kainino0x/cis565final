@@ -81,9 +81,10 @@ function clSetCells(cl, cells) {
 
         var buf = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, arr.length * 4);
         cl.queue.enqueueWriteBuffer(buf, false, 0, arr.length * 4, arr);
-        cpiBuffers.push({count: cpi.length, buf: buf});
+        cpiBuffers.push(buf);
     }
 
+    cl.cellCount = cells.length;
     cl.cellBuffers = cpiBuffers;
 }
 
@@ -170,11 +171,11 @@ function makeFace(indices, allpoints) {
     return {indices: idxout, values: values};
 }
 
-function clSetupArgs(cl, iteration, arrtris) {
-    var tricount = arrtris.length / 12;
+function clSetupArgs(cl, iteration) {
+    var tricount = cl.arrtricells.length;
 
-    cl.buftris = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, arrtris.length * 4 * 4);
-    cl.queue.enqueueWriteBuffer(buftris, false, 0, arrtris.length * 4 * 4, arrtris);
+    cl.buftris = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, cl.arrtris.length * 4 * 4);
+    cl.queue.enqueueWriteBuffer(buftris, false, 0, cl.arrtris.length * 4 * 4, cl.arrtris);
 
     cl.buftriexist = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2      * 4);
     cl.buftriout   = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2 * 12 * 4);
@@ -221,34 +222,62 @@ function clOutputToInput(cl, oldtricount) {
     tricells.push.apply(newtricells);  // extend tricells
     tris.push.apply(newtris);  // extend tris
 
-    var arrtris = new Float32Array(tris);
-    return arrtris;
+    cl.arrtricells = new Int32Array(tricells);
+    cl.arrtris = new Float32Array(tris);
 }
 
 function clFracture(cl, vertices, faces) {
     var vertcount = vertices.length;
     var tricount = faces.length;
 
-    var triarr = new Float32Array(tricount * 3 * 4);
-    for (var t = 0; t < tricount; t++) {
-        for (var v = 0; v < 3; v++) {
-            for (var a = 0; a < 3; a++) {
-                triarr[t * 12 + v * 4 + a] = vertices[faces[t].points[v]][a];
+    // make a buffer which has one copy of the mesh for each cell
+    cl.arrtricells = new Int32Array(cl.cellCount * tricount);
+    cl.arrtris = new Float32Array(cl.cellCount * tricount * 3 * 4);
+    for (var c = 0; c < cl.cellCount; c++) {
+        for (var t = 0; t < tricount; t++) {
+            var ct = c * tricount + t;
+            cl.arrtricells[ct] = c;
+            for (var v = 0; v < 3; v++) {
+                var ctv = ((c * tricount + t) * 3 + v) * 4;
+                for (var a = 0; a < 3; a++) {
+                    cl.arrtris[ctv + a] = vertices[faces[t].points[v]][a];
+                }
+                cl.arrtris[ctv + 3] = 0;
             }
-            triarr[t * 12 + v * 4 + 3] = 0;
         }
     }
+    // update tricount to reflect new buffer size
+    tricount = tricount * cl.cellCount;
 
     for (var i = 0; i < cl.cellBuffers.length; i++) {
-        clSetupArgs(cl, i, triarr);
+        clSetupArgs(cl, i);
 
         var localWS = [1];
-        var globalWS = [tricount * _];
+        var globalWS = [tricount];
         cl.queue.enqueueNDRangeKernel(cl.kernel, globalWS.length, null, globalWS, localWS);
 
-        triarr = clOutputToInput(cl, tricount);
-        tricount = triarr.length / 12;
+        clOutputToInput(cl, tricount);
     }
+    tricount = cl.arrtricells.length;
+
+    var cellfaces = [];
+    for (var i = 0; i < cl.arrtricells.length; i++) {
+        var idx = cl.arrtricells[i];
+        var c = cellfaces[idx];
+        if (!c) {
+            c = cellfaces[idx] = {points: [], faces: []};
+        }
+
+        for (var v = 0; v < 3; v++) {
+            var off = i * 12 + v * 4;
+            cellfaces.points.push([cl.arrtris[off + 0],
+                                   cl.arrtris[off + 1],
+                                   cl.arrtris[off + 2]]);
+        }
+        cellfaces.faces.push([i * 3, i * 3 + 1, i * 3 + 2]);
+    }
+
+    return cellfaces;
 
     /*
     var vertarr = new Float32Array(vertices.length * 3);

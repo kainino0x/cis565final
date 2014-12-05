@@ -24,11 +24,16 @@ kernel void fracture(
     if (index >= tricount) {
         return;
     }
+    
+    float4 _pla = planes[tricells[index]];
+    if (_pla.x == 0 && _pla.y == 0 && _pla.z == 0) {
+        // this cell doesn't have a plane on this iteration
+        return;
+    }
+    float3 pN = _pla.xyz;
+    float  pd = _pla.w;
 
     struct Tri tri = tris[index];
-    float4 pla = planes[tricells[index]];
-    float3 pN = pla.xyz;
-    float pd = pla.w;
 
     // TODO: perform plane-triangle clip
 
