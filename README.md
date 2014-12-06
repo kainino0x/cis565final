@@ -24,7 +24,6 @@ A pre-generated test fracture pattern (series of solid meshes):
 * Integrate simple webCL (eg. shift mesh's colors)
 * Generate some 3D Voronoi decomposition
 * Find and highlight intersections with simple mesh (eg glass panel)
-* Sew 
 
 ##TODO
 * ~~Parallel implementation of plane-triangle clipping.~~
