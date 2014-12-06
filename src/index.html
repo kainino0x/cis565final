@@ -77,12 +77,12 @@ function zpad(number) {
 function loadFracturePattern() {
     var result = [];
 
-    var astModel = CubicVR.loadCollada("models/icoshatter.dae", "models/");
+    var astModel = CubicVR.loadCollada("models/oct.dae", "models/");
 
     // TODO: make this more flexible with naming, or replace with our own voronoi decomp.
     for (var i = 0; i < 8; i++) {
-        var astMesh = astModel.getSceneObject("Icosphere_cell_" + zpad(i)).getMesh();
-        var astPos = astModel.getSceneObject("Icosphere_cell_" + zpad(i)).position;
+        var astMesh = astModel.getSceneObject("oct_cell_" + zpad(i)).getMesh();
+        var astPos = astModel.getSceneObject("oct_cell_" + zpad(i)).position;
         astMesh.buildEdges();
         
         // Currently also saves in the collision just for debugging.
