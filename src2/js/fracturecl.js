@@ -152,8 +152,8 @@ function makeFace(indices, points) {
         }
 
         // Create a tri from the centroid and the two points on each edge
-        idxout.push(F.cell);
         for (var i = 0; i < F.f.length; i++) {
+            idxout.push(F.cell);
             pushfloat4(values, F.c);
             pushfloat4(values, F.f[i][0]);
             pushfloat4(values, F.f[i][1]);
@@ -215,8 +215,8 @@ function clOutputToInput(cl, oldtricount) {
     var news = tmp.values;
 
     tmp = makeFace(newcells, news);
-    tricells.push.apply(tmp.indices);  // extend tricells
-    tris.push.apply(tmp.values);  // extend tris
+    tricells = tricells.concat(tmp.indices);
+    tris     = tris    .concat(tmp.values);
 
     cl.arrtricells = new Int32Array(tricells);
     cl.arrtris = new Float32Array(tris);
@@ -245,7 +245,7 @@ function clFracture(cl, vertices, faces) {
     // update tricount to reflect new buffer size
     tricount = tricount * cl.cellCount;
 
-    for (var i = 0; i < cl.cellBuffers.length; i++) {
+    for (var i = 0; i < 1/*cl.cellBuffers.length*/; i++) {
         clSetupArgs(cl, i);
 
         var localWS = [8];
