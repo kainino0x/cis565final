@@ -32,7 +32,7 @@ A pre-generated test fracture pattern (series of solid meshes):
 * correct orientation/center of fracture pieces.
 * center the fracture pattern on point of impact.
 * sew fractured pieces back together based on proximity to point of impact.
-* correctly handle concave surfaces.
+* correctly handle concave surfaces (island detection).
 
 ##Progress
 ###Part 1
