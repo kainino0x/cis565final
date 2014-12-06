@@ -2,6 +2,16 @@ struct Tri {
     float4 a, b, c; // x y z _
 };
 
+kernel void copyPerPlane(
+        /*0*/                uint  planecount,
+        /*1*/                uint  tricount,
+        /*2*/ constant        int *tricells,
+        /*3*/ constant struct Tri *tris,
+        /*4*/ global          int *trioutcells,
+        /*5*/ global   struct Tri *triout
+        ) {
+}
+
 kernel void fracture(
         // Fracture pattern planes: index these by tricells
         /*0*/                uint  planecount,

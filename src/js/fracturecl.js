@@ -21,6 +21,7 @@ function clInit() {
     var kernelSrc = loadKernel("fracturecl");
     var program = ctx.createProgram(kernelSrc);
     var device = ctx.getInfo(WebCL.CONTEXT_DEVICES)[0];
+    console.log(device.getInfo(WebCL.DEVICE_NAME));
 
     try {
         program.build([device], "");

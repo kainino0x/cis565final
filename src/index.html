@@ -612,7 +612,10 @@ function webGLStart() {
 
         for (var i = 0; i < fractured.length; i++) {
             var fracPos = [0, 0, 0]; // TODO
-            addMeshToScene(mesh.name + "_" + i, obj, rigid, fracPos, fractured[i]);
+            var fr = fractured[i];
+            if (fr) {
+                addMeshToScene(mesh.name + "_" + i, obj, rigid, fracPos, fr);
+            }
         }
     }
     
