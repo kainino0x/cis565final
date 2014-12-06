@@ -35,19 +35,117 @@ kernel void fracture(
         newoutcells[index] = -1;
         return;
     }
-    float3 pN = _pla.xyz;
+    float4 pN = float4(_pla.xyz, 0);
     float  pd = _pla.w;
+    float4 pP = {0, 0, -pd / pN.z, 0};  // Arbitrarily calculate a point on the plane (z-axis intersection)
 
     struct Tri tri = tris[index];
 
     // TODO: perform plane-triangle clip
+    bool cull1, cull2, cull3, tempb;
+    bool winding = true;    // keeps track of whether or not the winding is still consistent.
+    cull1 = dot(pN, tri.a - pP) < 0;
+    cull2 = dot(pN, tri.b - pP) < 0;
+    cull3 = dot(pN, tri.c - pP) < 0;
+    
+    float4 p1, p2, p3;
+    // sort the points from culled to not culled.
+    if (!cull1) {   // if cull1 is false, swap 1 and 3 (order 321)
+        // is this faster than putting if-else?  if (cull3){...} else if (cull2){...}
+        cull1 = cull3;
+        cull3 = false;
+        p1 = tri.c;
+        p2 = tri.b;
+        p3 = tri.a;
+        
+        winding = false;
+        
+        if (!cull1) {   // if it's still false, swap 1 and 2 (final order 231)
+            cull1 = cull2;
+            cull2 = false;
+            p1 = tri.b;
+            p2 = tri.c;
+            
+            winding = true;
+        }
+    }
+    
+    // note that it's configured to output only the original triangle by default.
+    struct Tri newTri1, newTri2;
+    newTri1 = tri;                  // current triangle.
+    int cell1 = cell;               // cell of the current face.
+    int cell2 = -1;                 // cell of the new face.
+    int cellP = -1;                 // cell of the new points (for newoutcells).
+    float4 newP1, newP2;            // new points.
+    
+    if (cull3) {  // if all 3 points are culled, do nothing.  Output is -1
+        // set cell1 to -1.
+        cell1 = -1
+    } else if (!cull1) { // if all 3 points are not culled, add to output normally.
+        // do nothing.
+    } else if (!cull2) { // XOR: if only one point is culled (p1), needs new face, add both to output
+        // calculate new edge p1-p2
+        float4 v = normalize(p1 - p2);
+        newP1 = p2 + v * (dot(p2, pN) + pd) / dot(v, pN);
+        
+        // calculate new edge p1-p3
+        v = normalize(p1 - p3);
+        newP2 = p3 + v * (dot(p3, pN) + pd) / dot(v, pN);
+        
+        newTri1.a = newTri2.a = 2;
+        if (winding) {
+            newTri1.b = newP2;
+            newTri1.c = newP1;
+            newTri2.b = p3;
+            newTri2.c = newP2;
+        } else {
+            newTri1.b = newP1;
+            newTri1.c = newP2;
+            newTri2.b = newP2;
+            newTri2.c = p3;
+        }
+        
+        // Both new faces and new points
+        cell2 = cellP = cell;
+    } else {             // two points culled (p1, p2), modify current face and add to output
+        // calculate new edge p1 - p3
+        float4 v = normalize(p1 - p3);
+        newP1 = p3 + v * (dot(p3, pN) + pd) / dot(v, pN);
+        
+        // calculate new edge p2-p3
+        v = normalize(p1 - p3);
+        newP2 = p3 + v * (dot(p3, pN) + pd) / dot(v, pN);
+        
+        // set new points
+        newTri1.a = newP1;
+        if (winding) {
+            newTri1.b = newP2;
+            newTri1.c = p3;
+        } else {
+            newTri1.b = p3;
+            newTri1.c = newP2;
+        }
+        
+        // just new points.
+        cellP = cell;
+    }
 
-    // TODO: output one or two triangles depending on the result
-    //     * also output zero or two new points
-
-    // the following should do nothing?
+    // output triangles.
+    trioutcells[2 * index] = cell1;
+    triout[2 * index] = newTri1;
+    trioutcells[2 * index + 1] = cell2;
+    triout[2 * index + 1] = newTri2;
+    
+    // output new points (for later triangulation).
+    newoutcells[index] = cellP;
+    newout[2 * index] = newP1;
+    newout[2 * index + 1] = newP2;
+    
+    /*
+    // the following should do nothing.
     trioutcells[2 * index] = cell;
     triout[2 * index] = tris[index];
     trioutcells[2 * index + 1] = -1;
     newoutcells[index] = -1;
+    */
 }

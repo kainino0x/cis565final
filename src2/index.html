@@ -277,7 +277,7 @@ function intersect(mesh, cell) {
                 edges[j].state = 0;
             }
             
-            // Calculate intersection for new point
+            // Calculate intersection for new point (p1 is not culled, p2 is).
             if (edges[j].state == 1) {
                 var v = normalize3(sub3(p2, p1));
                 var p = add3(p1, mult3c(v, -(dot3(p1, cellPlanes[i].normal) + cellPlanes[i].d) / dot3(v, cellPlanes[i].normal)));
