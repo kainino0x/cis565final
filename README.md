@@ -34,6 +34,7 @@ A pre-generated test fracture pattern (series of solid meshes):
 * sew fractured pieces back together based on proximity to point of impact.
 * correctly handle concave surfaces (island detection).
 * Optimization: Welding step (replace fragments with cell mesh if the fragment completely fills the cell).
+* Optimization: detecting collinear edges and merging their faces
 
 ##Progress
 ###Part 1
