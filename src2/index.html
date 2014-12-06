@@ -538,6 +538,7 @@ function webGLStart() {
     clSetCells(cl, fracturePattern);
     
     var pickConstraint = null;
+    var mouseMode = 0;
     var pickDist = 0;
 
     var addMeshToScene = function(name, obj, rigid, fracPos, isx) {
@@ -644,10 +645,11 @@ function webGLStart() {
 
             if (pickConstraint) {
                 pickConstraint.setPosition(scene.camera.unProject(mpos[0],mpos[1],pickDist));
-            } else {
+            } else if (mouseMode == 0) {
                 ctx.orbitView(mdelta);
+            } else if (mouseMode == 1) {
+                ctx.panView(mdelta);
             }
-            //          ctx.panView(mdelta);
         },
         mouseWheel: function (ctx, mpos, wdelta, keyState) {
             ctx.zoomView(wdelta);
@@ -676,6 +678,11 @@ function webGLStart() {
                 physics.addConstraint(pickConstraint);
                 pickDist = CubicVR.vec3.length(CubicVR.vec3.subtract(scene.camera.position,result.position));
                 pickConstraint.setPosition(scene.camera.unProject(mpos[0],mpos[1],pickDist));
+            }
+            if (keyState[CubicVR.keyboard.ALT]) {
+                mouseMode = 1;
+            } else {
+                mouseMode = 0;
             }
 
         },
