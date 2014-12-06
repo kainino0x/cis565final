@@ -24,6 +24,16 @@ A pre-generated test fracture pattern (series of solid meshes):
 * Integrate simple webCL (eg. shift mesh's colors)
 * Generate some 3D Voronoi decomposition
 * Find and highlight intersections with simple mesh (eg glass panel)
+* Sew 
+
+##TODO
+* ~~Parallel implementation of plane-triangle clipping.~~
+* webCL implementation of stream compaction (used in intersection).
+* webCL implementation of makeFaces() (needs webCL scan).
+* correct orientation/center of fracture pieces.
+* center the fracture pattern on point of impact.
+* sew fractured pieces back together based on proximity to point of impact.
+* correctly handle concave surfaces.
 
 ##Progress
 ###Part 1
