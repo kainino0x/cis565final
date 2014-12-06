@@ -69,6 +69,7 @@ The set of edges returned by the Bullet btConvexHullShape object
 ![](img/hulledges.png)
 
 ##Paralelization of the Intersection Algorithm
+###Initial Thoughts
 The intersection algorithm is the first point of paralelization. Each fracture cell can be processed onto the mesh independently, which means that we can first paralelize by cell.  Within each cell, each plane of the cell needs to be used as a clipping plane to then clip against the mesh. This will likely be a bottleneck for the code, since clipping planes will need to be run sequentially.
 
 Note that the current algorithm assumes a triangulated mesh.
@@ -111,3 +112,13 @@ Some issues are immediately clear:
 Some optimizations can be made:
 * The fracture pattern can be stored as a non-triangulated mesh.  That is, each face is in its own plane.  This way there is no need to calculate the minimum number of clipping planes necessary.
 * What if we optimized by vertex-face-edge : plane intersection as opposed to cell-by-cell?
+
+Keeping these issues in mind, we came up with a new way to parallelize the intersection algorithm:
+###Chosen Algorithm
+The goal of this algorithm was to find a method to clip meshes that had the least amount of dependence between units.  With this in mind, we came up with the following:
+
+Our code now parallelizes on a per-clipping-face-per-mesh-triangle level.  We run one clipping plane per cell on each triangle in the mesh per loop iteration, iterating through the list of clipping planes per cell.
+
+One key feature is that we no longer handle the mesh as a whole (we still keep track), but as a set of unrelated triangles.  We take this triangle "soup" and run it through the algorithm, getting new triangles with each iteration.  These triangles can be connected by merging identical points at the end of the algorithm if a closed mesh is desired, but disconnected triangles works for our purposes.
+
+The loop runs for max(#cellfaces) iterations.  The kernel processes a triangle-clipping plane pair with a cell number attached to it, and returns a list of triangles and a list of new points.  We take this list and generate a set of new triangles to add to the list, and reiterate.
