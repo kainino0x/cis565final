@@ -117,9 +117,10 @@ function makeFace(indices, points) {
     var faces = [];
     for (var i = 0; i < indices.length; i++) {
         var idx = indices[i];
-        var f = faces[idx];
-        if (!f) {
-            f = faces[idx] = [];
+        var F = faces[idx];
+        if (!F) {
+            faces[idx] = {cell: idx};
+            var f = faces[idx].f = [];
         }
 
         // save the current two points into the correct face
@@ -129,45 +130,33 @@ function makeFace(indices, points) {
         var p2 = [points[i * 4 + 4],
                   points[i * 4 + 5],
                   points[i * 4 + 6]];
-        f.push(p1, p2);
+        f.push([p1, p2]);
+    }
 
-        lastidx = i;
+    for (var i = 0; i < faces.length; i++) {
+        var F = faces[i];
+        var centr = [0, 0, 0];
+        for (var j = 0; j < F.f.length; j++) {
+            centr = add3(centr, add3(F.f[j][0], F.f[j][1]));
+        }
+        centr = mult3c(centr, 1.0 / F.f.length);
+        F.c = centr;
     }
 
     var idxout = [];
     var values = [];
     for (var iface = 0; iface < faces.length; iface++) {
-        var f = faces[iface];
-
-        // sort the face
-        var orig = f[0];
-        var first = normalize3(sub3(f[1], orig));
-        var sorted = [ {cosx: 0, p: f[1]} ];
-        for (var i = 2; i < f.length; i++) {
-            var p = f[i];
-            var rel = sub3(p, orig);
-            if (length3(rel) > 0.001) {
-                rel = normalize3(rel);
-                var cosx = Math.acos(dot3(rel, first));
-                sorted.push({cosx: cosx, p: p});
-            }
+        var F = faces[iface];
+        if (!F) {
+            continue;
         }
-        sorted.sort(function(a, b) { return a.cosx - b.cosx; });
 
-        // triangulate the face and save it
-        var oldp = orig;
-        for (var i = 0; i < sorted.length; i++) {
-            var p = sorted[i].p;
-            // remove duplicates
-            if (length3(sub3(p, oldp)) > 0.001) {
-                // save the cell index
-                idxout.push(iface);
-                // and the three points
-                pushfloat4(values, orig);
-                pushfloat4(values, oldp);
-                pushfloat4(values, p);
-                oldp = p;
-            }
+        // Create a tri from the centroid and the two points on each edge
+        idxout.push(F.cell);
+        for (var i = 0; i < F.f.length; i++) {
+            pushfloat4(values, F.c);
+            pushfloat4(values, F.f[i][0]);
+            pushfloat4(values, F.f[i][1]);
         }
     }
 
@@ -226,10 +215,8 @@ function clOutputToInput(cl, oldtricount) {
     var news = tmp.values;
 
     tmp = makeFace(newcells, news);
-    var newtricells = tmp.indices;
-    var newtris = tmp.values;
-    tricells.push.apply(newtricells);  // extend tricells
-    tris.push.apply(newtris);  // extend tris
+    tricells.push.apply(tmp.indices);  // extend tricells
+    tris.push.apply(tmp.values);  // extend tris
 
     cl.arrtricells = new Int32Array(tricells);
     cl.arrtris = new Float32Array(tris);
