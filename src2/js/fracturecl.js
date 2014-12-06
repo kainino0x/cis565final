@@ -17,7 +17,7 @@ function index3(array, index) {
 }
 
 function clInit() {
-    var ctx = webcl.createContext();
+    var ctx = webcl.createContext(WebCL.DEVICE_TYPE_GPU);
     var kernelSrc = loadKernel("fracturecl");
     var program = ctx.createProgram(kernelSrc);
     var device = ctx.getInfo(WebCL.CONTEXT_DEVICES)[0];
@@ -183,6 +183,8 @@ function clSetupArgs(cl, iteration) {
 
     cl.kernel.setArg(7, cl.bufnewoutcells);
     cl.kernel.setArg(8, cl.bufnewout);
+
+    cl.queue.finish();
 }
 
 function clOutputToInput(cl, oldtricount) {
@@ -215,6 +217,8 @@ function clOutputToInput(cl, oldtricount) {
 
     cl.arrtricells = new Int32Array(tricells);
     cl.arrtris = new Float32Array(tris);
+
+    cl.queue.finish();
 }
 
 function clFracture(cl, vertices, faces) {
@@ -240,16 +244,36 @@ function clFracture(cl, vertices, faces) {
     // update tricount to reflect new buffer size
     tricount = tricount * cl.cellCount;
 
+    var time_setupargs = 0;
+    var time_kernel = 0;
+    var time_outputtoinput = 0;
+
+    var blocksize = 256;
     for (var i = 0; i < cl.cellBuffers.length; i++) {
+        var t1 = performance.now();
+
         clSetupArgs(cl, i);
 
-        var localWS = [8];
-        var globalWS = [Math.ceil(tricount / 8) * 8];
+        var t2 = performance.now();
+
+        var localWS = [blocksize];
+        var globalWS = [Math.ceil(tricount / blocksize) * blocksize];
         cl.queue.enqueueNDRangeKernel(cl.kernel, globalWS.length, null, globalWS, localWS);
+        cl.queue.finish();
+
+        var t3 = performance.now();
 
         clOutputToInput(cl, tricount);
         tricount = cl.arrtricells.length;
+
+        var t4 = performance.now();
+        time_setupargs += t2 - t1;
+        time_kernel += t3 - t2;
+        time_outputtoinput += t4 - t3;
     }
+    console.log("time_setupargs: " + time_setupargs);
+    console.log("time_kernel: " + time_kernel);
+    console.log("time_outputtoinput: " + time_outputtoinput);
 
     var cellfaces = [];
     for (var i = 0; i < cl.arrtricells.length; i++) {
