@@ -17,7 +17,7 @@ function index3(array, index) {
 }
 
 function clInit() {
-    var ctx = webcl.createContext(WebCL.DEVICE_TYPE_GPU);
+    var ctx = webcl.createContext();
     var kernelSrc = loadKernel("fracturecl");
     var program = ctx.createProgram(kernelSrc);
     var device = ctx.getInfo(WebCL.CONTEXT_DEVICES)[0];
