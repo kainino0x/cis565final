@@ -117,10 +117,9 @@ function makeFace(indices, points) {
     var faces = [];
     for (var i = 0; i < indices.length; i++) {
         var idx = indices[i];
-        var F = faces[idx];
-        if (!F) {
-            faces[idx] = {cell: idx};
-            var f = faces[idx].f = [];
+        var f = faces[idx];
+        if (!f) {
+            f = faces[idx] = [];
         }
 
         // save the current two points into the correct face
@@ -133,30 +132,26 @@ function makeFace(indices, points) {
         f.push([p1, p2]);
     }
 
-    for (var i = 0; i < faces.length; i++) {
-        var F = faces[i];
-        var centr = [0, 0, 0];
-        for (var j = 0; j < F.f.length; j++) {
-            centr = add3(centr, add3(F.f[j][0], F.f[j][1]));
-        }
-        centr = mult3c(centr, 1.0 / F.f.length);
-        F.c = centr;
-    }
-
     var idxout = [];
     var values = [];
     for (var iface = 0; iface < faces.length; iface++) {
-        var F = faces[iface];
-        if (!F) {
+        var f = faces[iface];
+        if (!f) {
             continue;
         }
 
+        var centr = [0, 0, 0];
+        for (var j = 0; j < f.length; j++) {
+            centr = add3(centr, add3(f[j][0], f[j][1]));
+        }
+        centr = mult3c(centr, 0.5 / f.length);
+
         // Create a tri from the centroid and the two points on each edge
-        for (var i = 0; i < F.f.length; i++) {
-            idxout.push(F.cell);
-            pushfloat4(values, F.c);
-            pushfloat4(values, F.f[i][0]);
-            pushfloat4(values, F.f[i][1]);
+        for (var i = 0; i < f.length; i++) {
+            idxout.push(iface);
+            pushfloat4(values, centr);
+            pushfloat4(values, f[i][0]);
+            pushfloat4(values, f[i][1]);
         }
     }
 
