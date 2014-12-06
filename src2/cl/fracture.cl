@@ -35,7 +35,7 @@ kernel void fracture(
         newoutcells[index] = -1;
         return;
     }
-    float4 pN = float4(_pla.xyz, 0);
+    float4 pN = {_pla.xyz, 0};
     float  pd = _pla.w;
     float4 pP = {0, 0, -pd / pN.z, 0};  // Arbitrarily calculate a point on the plane (z-axis intersection)
 
@@ -80,7 +80,7 @@ kernel void fracture(
     
     if (cull3) {  // if all 3 points are culled, do nothing.  Output is -1
         // set cell1 to -1.
-        cell1 = -1
+        cell1 = -1;
     } else if (!cull1) { // if all 3 points are not culled, add to output normally.
         // do nothing.
     } else if (!cull2) { // XOR: if only one point is culled (p1), needs new face, add both to output
