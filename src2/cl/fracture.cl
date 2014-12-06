@@ -119,22 +119,22 @@ kernel void fracture(
         // Both new faces and new points
         cell2 = cellP = cell;
     } else {             // two points culled (p1, p2), modify current face and add to output
-        // calculate new edge p1 - p3
-        float4 v = normalize(p1 - p3);
+        // calculate new edge p2 - p3
+        float4 v = normalize(p2 - p3);
         newP1 = p3 + v * -(dot(p3, pN) + pd) / dot(v, pN);
         
-        // calculate new edge p2-p3
-        v = normalize(p2 - p3);
+        // calculate new edge p1-p3
+        v = normalize(p1 - p3);
         newP2 = p3 + v * -(dot(p3, pN) + pd) / dot(v, pN);
         
         // set new points
         newTri1.a = newP1;
         if (winding) {
-            newTri1.b = newP2;
-            newTri1.c = p3;
-        } else {
             newTri1.b = p3;
             newTri1.c = newP2;
+        } else {
+            newTri1.b = newP2;
+            newTri1.c = p3;
         }
         
         // just new points.
@@ -149,8 +149,13 @@ kernel void fracture(
     
     // output new points (for later triangulation).
     newoutcells[index] = cellP;
-    newout[2 * index] = newP1;
-    newout[2 * index + 1] = newP2;
+    if (winding) {
+        newout[2 * index] = newP1;
+        newout[2 * index + 1] = newP2;
+    } else {
+        newout[2 * index] = newP2;
+        newout[2 * index + 1] = newP1;
+    }
     
     /*
     // the following should do nothing.

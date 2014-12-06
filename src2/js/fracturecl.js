@@ -123,12 +123,12 @@ function makeFace(indices, points) {
         }
 
         // save the current two points into the correct face
-        var p1 = [points[i * 4 + 0],
-                  points[i * 4 + 1],
-                  points[i * 4 + 2]];
-        var p2 = [points[i * 4 + 4],
-                  points[i * 4 + 5],
-                  points[i * 4 + 6]];
+        var p1 = [points[i * 8 + 0],
+                  points[i * 8 + 1],
+                  points[i * 8 + 2]];
+        var p2 = [points[i * 8 + 4],
+                  points[i * 8 + 5],
+                  points[i * 8 + 6]];
         f.push([p1, p2]);
     }
 
@@ -240,7 +240,7 @@ function clFracture(cl, vertices, faces) {
     // update tricount to reflect new buffer size
     tricount = tricount * cl.cellCount;
 
-    for (var i = 0; i < 1/*cl.cellBuffers.length*/; i++) {
+    for (var i = 0; i < cl.cellBuffers.length; i++) {
         clSetupArgs(cl, i);
 
         var localWS = [8];
