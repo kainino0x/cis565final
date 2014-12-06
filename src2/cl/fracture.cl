@@ -48,7 +48,9 @@ kernel void fracture(
     cull2 = dot(pN, tri.b - pP) < 0;
     cull3 = dot(pN, tri.c - pP) < 0;
     
-    float4 p1, p2, p3;
+    float4 p1 = tri.a;
+    float4 p2 = tri.b;
+    float4 p3 = tri.c;
     // sort the points from culled to not culled.
     if (!cull1) {   // if cull1 is false, swap 1 and 3 (order 321)
         // is this faster than putting if-else?  if (cull3){...} else if (cull2){...}
@@ -68,6 +70,15 @@ kernel void fracture(
             
             winding = true;
         }
+    } else if (!cull2) {
+        cull2 = cull3;
+        cull3 = false;
+        
+        p1 = tri.a;
+        p2 = tri.c;
+        p3 = tri.b;
+        
+        winding = false;
     }
     
     // note that it's configured to output only the original triangle by default.
