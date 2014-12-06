@@ -30,7 +30,7 @@ kernel void fracture(
     if (_pla.x == 0 && _pla.y == 0 && _pla.z == 0) {
         // this cell doesn't have a plane on this iteration; do nothing
         trioutcells[2 * index] = cell;
-        triout[index] = tris[index];
+        triout[2 * index] = tris[index];
         trioutcells[2 * index + 1] = -1;
         newoutcells[index] = -1;
         return;
@@ -47,7 +47,7 @@ kernel void fracture(
 
     // the following should do nothing?
     trioutcells[2 * index] = cell;
-    triout[index] = tris[index];
+    triout[2 * index] = tris[index];
     trioutcells[2 * index + 1] = -1;
     newoutcells[index] = -1;
 }
