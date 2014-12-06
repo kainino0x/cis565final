@@ -544,6 +544,7 @@ function webGLStart() {
         // Create new mesh
         // Intersect each fracture pattern with hull to generate a new hull.
         // Alternatively, intersect mesh with obj.mesh to generate a new mesh.
+
         var m = new CubicVR.Mesh({
             name: name + "m",
             //wireframe: true,
@@ -567,7 +568,7 @@ function webGLStart() {
         var o = new CubicVR.SceneObject({
             name: name + "o",   
             mesh: m,
-            wireframe: true,
+            wireframe: false,
             position:[obj.position[0] + fracPos[0], obj.position[1] + fracPos[1], obj.position[2] + fracPos[2]],
             rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
         });
