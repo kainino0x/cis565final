@@ -669,14 +669,14 @@ function webGLStart() {
             //wireframe: true,
             buildWireframe: true,
             wireframeMaterial: {
-                color: [0.5, 1.0, 0.2]
+                color: [1.0, 1.0, 1.0]
             }
         });
         m.build({
             points: isx.points,
             faces: isx.faces,
             material: {
-                color: [0.5, 0.2, 0.2]
+                color: [1.0, 1.0, 1.0]
             }
         });
         m.buildEdges();
@@ -706,9 +706,15 @@ function webGLStart() {
             mass: 1,
             collision: coll
         });
-        r.setLinearVelocity(rigid.getLinearVelocity());
-        // TODO: Find a solution to conserving angular velocity along the original axis of rotation.  Simply passing it through is incorrect as it spins around a local axis.
-        r.setAngularVelocity(rigid.getAngularVelocity());
+        var lvel = rigid.getLinearVelocity();
+        var avel = rigid.getAngularVelocity();
+        // Conserve the linear momentum of the new pieces by adding in the
+        //     angular velocity term. This implementationn seems to work...
+        //     pretty well? The method comes from Bullet:
+        // http://bulletphysics.org/Bullet/BulletFull/btRigidBody_8h_source.html#l00374
+        var lvelrot = cross3(avel, fracPos);
+        r.setLinearVelocity(add3(lvel, lvelrot));
+        r.setAngularVelocity(avel);
 
         scene.bind(o);
         physics.bind(r);
