@@ -47,7 +47,8 @@ kernel void applyProximity(
         return;
     }
 
-    if (!prox[tricells[i_tri]]) {
+    int c = tricells[i_tri];
+    if (c != -1 && !prox[c]) {
         tricells[i_tri] = -2; // -1 means delete, -2 doesn't!
     }
 }

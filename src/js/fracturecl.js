@@ -51,7 +51,7 @@ function clSetCells(cl, cells, influence) {
         
         var prox = false;
         for (var j = 0; j < cell.points.length; j++) {
-            if (length3(cell.points[j]) < influence) {
+            if (length3(sub3(cell.points[j], center)) < influence) {
                 prox = true;
                 break;
             }
@@ -61,6 +61,7 @@ function clSetCells(cl, cells, influence) {
         var cellPlanes = cellToPlanes(cell, center, center);
         planesPerCell[i] = cellPlanes;
     }
+    cl.proximate = cellProximate; // for debug view
     cellProximate = new Uint32Array(cellProximate);
 
     var cellsPerIndex = [];

@@ -575,6 +575,10 @@ function webGLStart() {
         var globalPos = sub3(hit.position, obj.position);
         var fractured = clFracture(cl, mesh.points, mesh.faces, rot, globalPos);
         for (var i = 0; i < fracturePattern.length; i++) {
+            if (!cl.proximate[i]) {
+                continue;
+            }
+
             var fracMesh = fracturePattern[i].mesh;
             var fracColl = fracturePattern[i].collision;
             var fracPos = fracturePattern[i].position;
