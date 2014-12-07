@@ -22,7 +22,7 @@ kernel void transformCopyPerPlane(
         /*4*/ global struct Tri *tris        // Needs to be initialized only for the first tricount elems, but same
         ) {
     uint i_tri = get_global_id(0);
-    if (i_tri > tricount) {
+    if (i_tri >= tricount) {
         return;
     }
 
