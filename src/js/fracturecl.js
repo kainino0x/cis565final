@@ -270,10 +270,14 @@ function clTransformCopyPerPlane(cl, vertices, faces, transform) {
     var globalWS = [Math.ceil(tricount / localsize) * localsize];
     cl.queue.enqueueNDRangeKernel(cl.copykernel, globalWS.length, null, globalWS, localWS);
 
+    cl.queue.finish();
+
     return tricount * cl.cellCount;
 }
 
 function clFracture(cl, vertices, faces, rotation, pImpact) {
+    var tInit = performance.now();
+    var t0;
     var vertcount = vertices.length;
     var tricount = faces.length;
     
@@ -288,12 +292,15 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
                      rotation[6], rotation[7], rotation[8], 0,
                                0,           0,           0, 1];
                                
+    t0 = performance.now();
     tricount = clTransformCopyPerPlane(cl, vertices, faces, transform);
+    var time_transformcopy = performance.now() - t0;
 
     var time_setupargs = 0;
     var time_kernel = 0;
     var time_outputtoinput = 0;
 
+    t0 = performance.now();
     var localsize = 1;
     for (var i = 0; i < cl.cellBuffers.length; i++) {
         var t1 = performance.now();
@@ -317,27 +324,54 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
         time_kernel += t3 - t2;
         time_outputtoinput += t4 - t3;
     }
-    console.log("time_setupargs: " + time_setupargs);
-    console.log("time_kernel: " + time_kernel);
-    console.log("time_outputtoinput: " + time_outputtoinput);
+    var time_total_iterations = performance.now() - t0;
 
+    t0 = performance.now();
     var cellfaces = [];
     for (var i = 0; i < cl.arrtricells.length; i++) {
         var idx = cl.arrtricells[i];
         var c = cellfaces[idx];
         if (!c) {
-            c = cellfaces[idx] = {points: [], faces: []};
+            c = cellfaces[idx] = {points: [], faces: [], position: [0,0,0]};
         }
 
         for (var v = 0; v < 3; v++) {
             var off = i * 12 + v * 4;
-            c.points.push([cl.arrtris[off + 0],
-                           cl.arrtris[off + 1],
-                           cl.arrtris[off + 2]]);
+            var p = [cl.arrtris[off + 0],
+                     cl.arrtris[off + 1],
+                     cl.arrtris[off + 2]]
+            c.points.push(p);
+            c.position = add3(c.position, p);
         }
         var ci = c.faces.length * 3;
         c.faces.push([ci, ci + 1, ci + 2]);
     }
+    var time_collect = performance.now() - t0;
+
+    t0 = performance.now();
+    for (var i = 0; i < cellfaces.length; i++) {
+        var c = cellfaces[i];
+        if (!c) {
+            continue;
+        }
+
+        c.position = mult3c(c.position, 1.0 / c.points.length);
+        for (var j = 0; j < c.points.length; j++) {
+            c.points[j] = sub3(c.points[j], c.position);
+        }
+    }
+    var time_recenter = performance.now() - t0;
+
+    var time_total = performance.now() - tInit;
+
+    console.log("time_total: "                 + time_total);
+    console.log("    time_transformcopy: "     + time_transformcopy);
+    console.log("    time_total_iterations: "  + time_total_iterations);
+    console.log("        time_setupargs: "     + time_setupargs);
+    console.log("        time_kernel: "        + time_kernel);
+    console.log("        time_outputtoinput: " + time_outputtoinput);
+    console.log("    time_collect: "           + time_collect);
+    console.log("    time_recenter: "          + time_recenter);
 
     return cellfaces;
 }

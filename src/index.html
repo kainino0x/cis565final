@@ -721,9 +721,9 @@ function webGLStart() {
         }
         
         for (var i = 0; i < fractured.length; i++) {
-            var fracPos = [0, 0, 0]; // TODO
             var fr = fractured[i];
             if (fr) {
+                var fracPos = fr.position;
                 addMeshToScene(mesh.name + "_" + i, obj, rigid, fracPos, fr);
             }
         }
