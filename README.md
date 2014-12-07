@@ -27,11 +27,11 @@ A pre-generated test fracture pattern (series of solid meshes):
 
 ##TODO
 * ~~Parallel implementation of plane-triangle clipping.~~
-* use webCL to create a copy of the input mesh for each fracture cell.
+* ~~use webCL to create a copy of the input mesh for each fracture cell.~~
 * webCL implementation of stream compaction (used in intersection).
 * webCL implementation of makeFaces() (needs webCL scan).
-* correct orientation/center of fracture pieces.
-* center the fracture pattern on point of impact.
+* ~~correct orientation/center of fracture pieces.~~
+* ~~center the fracture pattern on point of impact.~~
 * sew fractured pieces back together based on proximity to point of impact.
 * correctly handle concave surfaces (island detection).
 * Optimization: Welding step (replace fragments with cell mesh if the fragment completely fills the cell).
