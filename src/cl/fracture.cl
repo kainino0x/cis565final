@@ -37,6 +37,21 @@ kernel void transformCopyPerPlane(
     }
 }
 
+kernel void applyProximity(
+        /*0*/ constant uint *prox,     // true/false proximate per cell
+        /*1*/          uint  tricount,
+        /*2*/ global    int *tricells  // Modified in place
+        ) {
+    uint i_tri = get_global_id(0);
+    if (i_tri >= tricount) {
+        return;
+    }
+
+    if (!prox[tricells[i_tri]]) {
+        tricells[i_tri] = -2; // -1 means delete, -2 doesn't!
+    }
+}
+
 kernel void fracture(
         // Fracture pattern planes: index these by tricells
         /*0*/                uint  planecount,
@@ -135,11 +150,11 @@ kernel void fracture(
     } else if (!cull2) { // XOR: if only one point is culled (p1), needs new face, add both to output
         // calculate new edge p1-p2
         float4 v = normalize(p1 - p2);
-        newP1 = p2 + v * -(dot(p2, pN) + pd) / dot(v, pN) * 0.95f;
+        newP1 = p2 + v * -(dot(p2, pN) + pd) / dot(v, pN);
         
         // calculate new edge p1-p3
         v = normalize(p1 - p3);
-        newP2 = p3 + v * -(dot(p3, pN) + pd) / dot(v, pN) * 0.95f;
+        newP2 = p3 + v * -(dot(p3, pN) + pd) / dot(v, pN);
         
         newTri1.a = newTri2.a = p2;
         if (winding) {
@@ -159,11 +174,11 @@ kernel void fracture(
     } else {             // two points culled (p1, p2), modify current face and add to output
         // calculate new edge p2 - p3
         float4 v = normalize(p2 - p3);
-        newP1 = p3 + v * -(dot(p3, pN) + pd) / dot(v, pN) * 0.95f;
+        newP1 = p3 + v * -(dot(p3, pN) + pd) / dot(v, pN);
         
         // calculate new edge p1-p3
         v = normalize(p1 - p3);
-        newP2 = p3 + v * -(dot(p3, pN) + pd) / dot(v, pN) * 0.95f;
+        newP2 = p3 + v * -(dot(p3, pN) + pd) / dot(v, pN);
         
         // set new points
         newTri1.a = newP1;

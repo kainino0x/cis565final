@@ -485,7 +485,7 @@ function webGLStart() {
     spawnObjects(scene,physics,objlist);
 
     fracturePattern = loadFracturePattern();
-    clSetCells(cl, fracturePattern);
+    clSetCells(cl, fracturePattern, 0.5);
     
     updateGeoStats(scene);
     

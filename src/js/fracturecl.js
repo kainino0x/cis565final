@@ -37,29 +37,31 @@ function clInit() {
     cl.ctx = ctx;
     cl.kernel = program.createKernel("fracture");
     cl.copykernel = program.createKernel("transformCopyPerPlane");
+    cl.proxkernel = program.createKernel("applyProximity");
     cl.queue = ctx.createCommandQueue(device);
     return cl;
 }
 
-function clSetCells(cl, cells) {
+function clSetCells(cl, cells, influence) {
+    var cellProximate = [];
     var planesPerCell = [];
-
     for (var i = 0; i < cells.length; i++) {
         var cell = cells[i].mesh;
         var center = cells[i].position; //NOTE: This assumes that the position of each cell is inside of it!
-        /*
-        var center = [0,0,0];
-        for (var j = 0; j < cells[i].mesh.points.length; j++) {
-            center = add3(center, cells[i].mesh.points[j]);
-        }
-        center = add3(mult3c(center, 1 / cells[i].mesh.points.length), cells[i].position);
         
-        console.log(center);
-        */
+        var prox = false;
+        for (var j = 0; j < cell.points.length; j++) {
+            if (length3(cell.points[j]) < influence) {
+                prox = true;
+                break;
+            }
+        }
+        cellProximate[i] = prox;
         
         var cellPlanes = cellToPlanes(cell, center, center);
-        planesPerCell.push(cellPlanes);
+        planesPerCell[i] = cellPlanes;
     }
+    cellProximate = new Uint32Array(cellProximate);
 
     var cellsPerIndex = [];
     for (var i = 0; true; i++) {
@@ -100,6 +102,11 @@ function clSetCells(cl, cells) {
 
     cl.cellCount = cells.length;
     cl.cellBuffers = cpiBuffers;
+
+    var buf = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, cellProximate.byteLength);
+    cl.queue.enqueueWriteBuffer(buf, false, 0, cellProximate.byteLength, cellProximate);
+    cl.cellProxBuf = buf;
+    cl.proxkernel.setArg(0, cl.cellProxBuf);
 }
 
 function floatNcompact(N, index, val) {
@@ -177,7 +184,7 @@ function clSetupArgs(cl, iteration, tricount) {
         cl.queue.enqueueWriteBuffer(cl.buftricells, false, 0, cl.arrtricells.byteLength, cl.arrtricells);
     }
 
-    cl.buftrioutcells = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2      * 4);
+    cl.buftrioutcells = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, tricount * 2      * 4);
     cl.buftriout      = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2 * 12 * 4);
     cl.bufnewoutcells = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount          * 4);
     cl.bufnewout      = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2 *  4 * 4);
@@ -316,20 +323,32 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
 
         var t3 = performance.now();
 
+        if (i == cl.cellBuffers.length - 1) {
+            // on the last iteration, before copying to cpu, merge faraway cells
+            var localWS = [localsize];
+            var globalWS = [Math.ceil(tricount * 2 / localsize) * localsize];
+            cl.proxkernel.setArg(1, new Uint32Array([tricount * 2]));
+            cl.proxkernel.setArg(2, cl.buftrioutcells);
+            cl.queue.enqueueNDRangeKernel(cl.proxkernel, globalWS.length, null, globalWS, localWS);
+            cl.queue.finish();
+            var time_proximity = performance.now() - t3;
+        }
+
+        var t4 = performance.now();
         clOutputToInput(cl, tricount);
         tricount = cl.arrtricells.length;
 
-        var t4 = performance.now();
+        var t5 = performance.now();
         time_setupargs += t2 - t1;
         time_kernel += t3 - t2;
-        time_outputtoinput += t4 - t3;
+        time_outputtoinput += t5 - t4;
     }
     var time_total_iterations = performance.now() - t0;
 
     t0 = performance.now();
     var cellfaces = [];
     for (var i = 0; i < cl.arrtricells.length; i++) {
-        var idx = cl.arrtricells[i];
+        var idx = cl.arrtricells[i] + 2; // so that -2 becomes a valid cell
         var c = cellfaces[idx];
         if (!c) {
             c = cellfaces[idx] = {points: [], faces: [], position: [0,0,0]};
@@ -370,6 +389,7 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
     console.log("        time_setupargs: "     + time_setupargs);
     console.log("        time_kernel: "        + time_kernel);
     console.log("        time_outputtoinput: " + time_outputtoinput);
+    console.log("        time_proximity: "     + time_proximity);
     console.log("    time_collect: "           + time_collect);
     console.log("    time_recenter: "          + time_recenter);
 
