@@ -7,6 +7,15 @@
 
         <style>
 
+#geostats {
+    position: absolute;
+    top: 0.5em;
+    right: 0.5em;
+    z-index: 1000;
+    background-color: #555;
+    padding: 5px 10px 5px 10px;
+    color: #FFF;
+}
 
 #footer {
     position: absolute;
@@ -40,6 +49,22 @@ var spawnObjs = 2;
 var fracturePattern;
 var wireframe = false;
 var debugfracturemesh = false;
+
+function updateGeoStats(scene) {
+    var faces = 0,
+        verts = 0,
+        meshes = scene.sceneObjects.length;
+    
+    for (var i = 0; i < meshes; i++) {
+        faces += scene.sceneObjects[i].obj.faces.length;
+        verts += scene.sceneObjects[i].obj.points.length;
+    }
+    
+    document.getElementById("face_count").innerHTML = faces;
+    document.getElementById("vertex_count").innerHTML = verts;
+    document.getElementById("mesh_count").innerHTML = meshes;
+    
+}
 
 // Loads in the base mesh to be fractured.
 // Currently limited to convex hulls only.
@@ -628,6 +653,8 @@ function webGLStart() {
     fracturePattern = loadFracturePattern();
     clSetCells(cl, fracturePattern);
     
+    updateGeoStats(scene);
+    
     var pickConstraint = null;
     var mouseMode = 0;
     var pickDist = 0;
@@ -774,6 +801,7 @@ function webGLStart() {
             if (keyState[CubicVR.keyboard.KEY_F]) {
                 if (result) {
                     fracture(rayTo, result);
+                    updateGeoStats(scene);
                 }
             } else if (keyState[CubicVR.keyboard.KEY_W]) {
                 wireframe = !wireframe;
@@ -842,6 +870,11 @@ function webGLStart() {
             <br>
             CIS 565 Final Project by Jiatong He &amp; Kai Ninomiya
             (<a href="https://github.com/kainino0x/cis565final">on Github</a>)
+        </div>
+        <div id="geostats">
+            Faces: <span id="face_count">0</span></br>
+            Vertices: <span id="vertex_count">0</span></br>
+            Meshes: <span id="mesh_count">0</span>
         </div>
     </body>
 </html>
