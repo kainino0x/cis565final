@@ -693,6 +693,7 @@ function webGLStart() {
                 rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
             });
             scene.bind(o);
+            o.visible = debugfracturemesh;
         }
         
         for (var i = 0; i < fractured.length; i++) {
@@ -746,7 +747,7 @@ function webGLStart() {
             var rayTo = scene.camera.unProject(mpos[0],mpos[1]);
             var result = physics.getRayHit(scene.camera.position,rayTo);
 
-            if (keyState[CubicVR.keyboard.CTRL]) {
+            if (keyState[CubicVR.keyboard.KEY_F]) {
                 if (result) {
                     fracture(rayTo, result);
                 }
