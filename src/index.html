@@ -140,6 +140,61 @@ function containsNormal(a, norm) {
     return false;
 }
 
+function toRotationMatrix(a) {
+    var m = mat3Id();
+    var m1 = mat3Id();
+    var DEG_TO_RAD = 3.14159265359/180.0;
+    var sAng, cAng;
+    
+    if (a[0]) {
+        sAng = Math.sin(a[0] * DEG_TO_RAD);
+        cAng = Math.cos(a[0] * DEG_TO_RAD);
+        m1[4] = cAng;   m1[5] = sAng;
+        m1[7] = -sAng;  m1[8] = cAng;
+        
+        m = mat3mult(m, m1);
+    }
+    if (a[1]) {
+        sAng = Math.sin(a[1] * DEG_TO_RAD);
+        cAng = Math.cos(a[1] * DEG_TO_RAD);
+        m1[0] = cAng;   m1[2] = -sAng;
+        m1[6] = sAng;  m1[8] = cAng;
+        
+        m = mat3mult(m, m1);
+    }
+    if (a[2]) {
+        sAng = Math.sin(a[2] * DEG_TO_RAD);
+        cAng = Math.cos(a[2] * DEG_TO_RAD);
+        m1[0] = cAng;   m1[1] = sAng;
+        m1[3] = -sAng;  m1[4] = cAng;
+        
+        m = mat3mult(m, m1);
+    }
+    return m;
+}
+
+function mat3Id() {
+    var mat = [1, 0, 0,
+               0, 1, 0,
+               0, 0, 1];
+    return mat;
+}
+
+function mat3mult(a, b) {
+    var mat = [];
+    mat.push(a[0] * b[0] + a[1] * b[3] + a[2] * b[6]);
+    mat.push(a[0] * b[1] + a[1] * b[4] + a[2] * b[7]);
+    mat.push(a[0] * b[2] + a[1] * b[5] + a[2] * b[8]);
+    mat.push(a[3] * b[0] + a[4] * b[3] + a[5] * b[6]);
+    mat.push(a[3] * b[1] + a[4] * b[4] + a[5] * b[7]);
+    mat.push(a[3] * b[2] + a[4] * b[5] + a[5] * b[8]);
+    mat.push(a[6] * b[0] + a[7] * b[3] + a[8] * b[6]);
+    mat.push(a[6] * b[1] + a[7] * b[4] + a[8] * b[7]);
+    mat.push(a[6] * b[2] + a[7] * b[5] + a[8] * b[8]);
+    
+    return mat;
+}
+
 function contains3c(a, c) {
     return a[0] == c || a[1] == c || a[2] == c;
 }
