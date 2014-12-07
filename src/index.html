@@ -147,6 +147,7 @@ function toRotationMatrix(a) {
     var sAng, cAng;
     
     if (a[0]) {
+        m1 = mat3Id();
         sAng = Math.sin(a[0] * DEG_TO_RAD);
         cAng = Math.cos(a[0] * DEG_TO_RAD);
         m1[4] = cAng;   m1[5] = sAng;
@@ -155,6 +156,7 @@ function toRotationMatrix(a) {
         m = mat3mult(m, m1);
     }
     if (a[1]) {
+        m1 = mat3Id();
         sAng = Math.sin(a[1] * DEG_TO_RAD);
         cAng = Math.cos(a[1] * DEG_TO_RAD);
         m1[0] = cAng;   m1[2] = -sAng;
@@ -163,6 +165,7 @@ function toRotationMatrix(a) {
         m = mat3mult(m, m1);
     }
     if (a[2]) {
+        m1 = mat3Id();
         sAng = Math.sin(a[2] * DEG_TO_RAD);
         cAng = Math.cos(a[2] * DEG_TO_RAD);
         m1[0] = cAng;   m1[1] = sAng;
