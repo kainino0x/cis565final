@@ -42,6 +42,7 @@ A pre-generated test fracture pattern (series of solid meshes):
 * scale fracture patterns up to the mesh geometry(or generate sufficiently large ones) (or generate one with a single outer cell whose fac normals all point outwards?)
 * ~~Find the correct center of meshes (for better RBD in bullet)~~
 * correctly handle concave surfaces (island detection).
+* Modify linear velocity based on direction and distance from impact point.
 * Optimization: Welding step (replace fragments with cell mesh if the fragment completely fills the cell).
 * Optimization: detecting collinear edges and merging their faces
 * performance testing, profiling, other optimizations.
