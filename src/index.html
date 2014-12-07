@@ -14,6 +14,8 @@
         <script type='text/javascript'>
 var spawnObjs = 2;
 var fracturePattern;
+var wireframe = false;
+var debugfracturemesh = true;
 
 // Loads in the base mesh to be fractured.
 // Currently limited to convex hulls only.
@@ -33,7 +35,6 @@ function generateObjects() {
     });
     result.push({mesh:astMesh,collision:astCollision});
     
-    console.log(astMesh);
     
     return result;
 }
@@ -78,7 +79,6 @@ function loadFracturePattern() {
     var result = [];
 
     var astModel = CubicVR.loadCollada("models/cubeshatter.dae", "models/");
-    console.log(astModel);
     // TODO: make this more flexible with naming, or replace with our own voronoi decomp.
     for (var i = 0; i < astModel.sceneObjects.length; i++) {
         var astMesh = astModel.getSceneObject("Cube_cell_" + zpad(i)).getMesh();
@@ -223,7 +223,6 @@ function flipEdge(e) {
 }
 
 function cellToPlanes(cell, center, position) {
-    console.log(position);
     var cellPlanes = [];
     for (var i = 0; i < cell.faces.length; i++) {
         var p1 = add3(cell.points[cell.faces[i].points[0]], position);
@@ -533,7 +532,6 @@ function webGLStart() {
     };
 
     var cl = clInit();
-    console.log(cl);
 
     // New scene with our canvas dimensions and default camera with FOV 80
     var scene = new CubicVR.Scene({
@@ -638,7 +636,7 @@ function webGLStart() {
         var o = new CubicVR.SceneObject({
             name: name + "o",   
             mesh: m,
-            wireframe: false,
+            wireframe: wireframe,
             position:[obj.position[0] + fracPos[0], obj.position[1] + fracPos[1], obj.position[2] + fracPos[2]],
             rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
         });
@@ -677,6 +675,7 @@ function webGLStart() {
         scene.remove(obj);
         physics.remove(rigid);
         
+        // Generates a debug fracture pattern mesh
         var rot = toRotationMatrix(obj.lrotation);
         var globalPos = sub3(hit.position, obj.position);
         var fractured = clFracture(cl, mesh.points, mesh.faces, rot, globalPos);
@@ -688,7 +687,7 @@ function webGLStart() {
             fracMesh.buildWireframe = true;
             fracMesh.buildEdges();
             var o = new CubicVR.SceneObject({
-                name: name + "oasdf" + i,
+                name: name + "_debug_fracture_" + i,
                 mesh: fracMesh,
                 position:add3(add3(obj.position, fracPos), globalPos),
                 rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
@@ -751,10 +750,18 @@ function webGLStart() {
                 if (result) {
                     fracture(rayTo, result);
                 }
-            } else if (keyState[CubicVR.keyboard.SPACE]) {
+            } else if (keyState[CubicVR.keyboard.KEY_W]) {
+                wireframe = !wireframe;
                 for (var i = 0; i < scene.sceneObjects.length; i++) {
                     if (scene.sceneObjects[i].name != "floor") {
-                        scene.sceneObjects[i].setWireframe(!scene.sceneObjects[i].wireframe);
+                        scene.sceneObjects[i].setWireframe(wireframe);
+                    }
+                }
+            } else if (keyState[CubicVR.keyboard.KEY_D]) {
+                debugfracturemesh = !debugfracturemesh;
+                for (var i = 0; i < scene.sceneObjects.length; i++) {
+                    if (scene.sceneObjects[i].name.indexOf("debug_fracture") > -1) {
+                        scene.sceneObjects[i].visible = debugfracturemesh;
                     }
                 }
             } else if (result && !pickConstraint) {
