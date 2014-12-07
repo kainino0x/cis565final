@@ -21,9 +21,9 @@ var fracturePattern;
 function generateObjects() {
     var result = [];
     
-    var astModel = CubicVR.loadCollada("models/icosphere.dae", "models/");
+    var astModel = CubicVR.loadCollada("models/wall.dae", "models/");
     // Add a ast to mesh, size 1.0
-    var astObj = astModel.getSceneObject("Icosphere");
+    var astObj = astModel.getSceneObject("wall");
     
     var astMesh = astObj.getMesh();
     
@@ -77,12 +77,12 @@ function zpad(number) {
 function loadFracturePattern() {
     var result = [];
 
-    var astModel = CubicVR.loadCollada("models/icoshatter.dae", "models/");
-
+    var astModel = CubicVR.loadCollada("models/cubeshatter.dae", "models/");
+    console.log(astModel);
     // TODO: make this more flexible with naming, or replace with our own voronoi decomp.
-    for (var i = 0; i < 8; i++) {
-        var astMesh = astModel.getSceneObject("Icosphere_cell_" + zpad(i)).getMesh();
-        var astPos = astModel.getSceneObject("Icosphere_cell_" + zpad(i)).position;
+    for (var i = 0; i < astModel.sceneObjects.length; i++) {
+        var astMesh = astModel.getSceneObject("Cube_cell_" + zpad(i)).getMesh();
+        var astPos = astModel.getSceneObject("Cube_cell_" + zpad(i)).position;
         astMesh.buildEdges();
         
         // Currently also saves in the collision just for debugging.
