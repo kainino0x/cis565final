@@ -2,14 +2,39 @@ struct Tri {
     float4 a, b, c; // x y z _
 };
 
-kernel void copyPerPlane(
-        /*0*/                uint  planecount,
-        /*1*/                uint  tricount,
-        /*2*/ constant        int *tricells,
-        /*3*/ constant struct Tri *tris,
-        /*4*/ global          int *trioutcells,
-        /*5*/ global   struct Tri *triout
+/// Row-major matrix multiplication, assuming `v` is a point (w=1)
+inline float4 matmul(float16 m, float4 v) {
+    v.w = 1.0;
+    float4 mv = {
+        dot(m.s0123, v),
+        dot(m.s4567, v),
+        dot(m.s89AB, v),
+        dot(m.sCDEF, v)
+    };
+    return mv;
+}
+
+kernel void transformCopyPerPlane(
+        /*0*/              uint  planecount,
+        /*1*/           float16  matrix,     // The transformation matrix
+        /*2*/              uint  tricount,   // Original number of triangles
+        /*3*/ global        int *tricells,   // Does not have to be initialized, but should be size planecount*tricount
+        /*4*/ global struct Tri *tris        // Needs to be initialized only for the first tricount elems, but same
         ) {
+    uint i_tri = get_global_id(0);
+    if (i_tri > tricount) {
+        return;
+    }
+
+    struct Tri t = tris[i_tri];
+    t.a = matmul(matrix, t.a);
+    t.b = matmul(matrix, t.b);
+    t.c = matmul(matrix, t.c);
+
+    for (int i_plane = 0; i_plane < planecount; i_plane++) {
+        tricells[i_plane * tricount + i_tri] = i_plane;
+        tris    [i_plane * tricount + i_tri] = t;
+    }
 }
 
 kernel void fracture(
@@ -19,8 +44,8 @@ kernel void fracture(
 
         // Input mesh triangles (initially, one copy per cell)
         /*2*/                uint  tricount,
-        /*3*/ constant        int *tricells,
-        /*4*/ constant struct Tri *tris,
+        /*3*/ constant        int *tricells,    // len is tricount
+        /*4*/ constant struct Tri *tris,        // len is tricount
 
         // Output mesh triangles
         /*5*/ global          int *trioutcells, // len is tricount*2, -1 for nonexistent

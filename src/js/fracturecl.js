@@ -17,7 +17,7 @@ function index3(array, index) {
 }
 
 function clInit() {
-    var ctx = webcl.createContext();
+    var ctx = webcl.createContext(/*WebCL.DEVICE_TYPE_GPU*/);
     var kernelSrc = loadKernel("fracturecl");
     var program = ctx.createProgram(kernelSrc);
     var device = ctx.getInfo(WebCL.CONTEXT_DEVICES)[0];
@@ -36,6 +36,7 @@ function clInit() {
     var cl = {};
     cl.ctx = ctx;
     cl.kernel = program.createKernel("fracture");
+    cl.copykernel = program.createKernel("transformCopyPerPlane");
     cl.queue = ctx.createCommandQueue(device);
     return cl;
 }
@@ -159,13 +160,13 @@ function makeFace(indices, points) {
     return {indices: idxout, values: values};
 }
 
-function clSetupArgs(cl, iteration) {
-    var tricount = cl.arrtricells.length;
-
-    cl.buftricells = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, cl.arrtricells.byteLength);
-    cl.buftris     = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, cl.arrtris.byteLength);
-    cl.queue.enqueueWriteBuffer(cl.buftris    , false, 0, cl.arrtris    .byteLength, cl.arrtris);
-    cl.queue.enqueueWriteBuffer(cl.buftricells, false, 0, cl.arrtricells.byteLength, cl.arrtricells);
+function clSetupArgs(cl, iteration, tricount) {
+    if (iteration > 0) {
+        cl.buftricells = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, cl.arrtricells.byteLength);
+        cl.buftris     = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, cl.arrtris.byteLength);
+        cl.queue.enqueueWriteBuffer(cl.buftris    , false, 0, cl.arrtris    .byteLength, cl.arrtris);
+        cl.queue.enqueueWriteBuffer(cl.buftricells, false, 0, cl.arrtricells.byteLength, cl.arrtricells);
+    }
 
     cl.buftrioutcells = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2      * 4);
     cl.buftriout      = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2 * 12 * 4);
@@ -224,6 +225,45 @@ function clOutputToInput(cl, oldtricount) {
     cl.queue.finish();
 }
 
+function clVertfaceToTris(cl, vertices, faces) {
+    // create initial array of mesh data
+    var tricount = faces.length;
+    cl.arrtris = new Float32Array(tricount * 3 * 4);
+    for (var t = 0; t < tricount; t++) {
+        for (var v = 0; v < 3; v++) {
+            var tv = (t * 3 + v) * 4;
+            for (var a = 0; a < 3; a++) {
+                cl.arrtris[tv + a] = vertices[faces[t].points[v]][a];
+            }
+            cl.arrtris[tv + 3] = 0;
+        }
+    }
+}
+
+function clTransformCopyPerPlane(cl, vertices, faces, transform) {
+    var tricount = faces.length;
+
+    // Create the array of triangle data for one copy of the mesh
+    clVertfaceToTris(cl, vertices, faces);
+
+    // Allocate memory for one copy per cell of the mesh
+    cl.buftricells = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, cl.cellCount * tricount      * 4);
+    cl.buftris     = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, cl.cellCount * tricount * 12 * 4);
+    cl.queue.enqueueWriteBuffer(cl.buftris, false, 0, cl.arrtris.byteLength, cl.arrtris);
+    cl.copykernel.setArg(0, new Uint32Array([cl.cellCount]));
+    cl.copykernel.setArg(1, new Float32Array(transform));
+    cl.copykernel.setArg(2, new Uint32Array([tricount]));
+    cl.copykernel.setArg(3, cl.buftricells);
+    cl.copykernel.setArg(4, cl.buftris);
+
+    var localsize = 1;
+    var localWS = [localsize];
+    var globalWS = [Math.ceil(tricount / localsize) * localsize];
+    cl.queue.enqueueNDRangeKernel(cl.copykernel, globalWS.length, null, globalWS, localWS);
+
+    return tricount * cl.cellCount;
+}
+
 function clFracture(cl, vertices, faces, rotation, pImpact) {
     var vertcount = vertices.length;
     var tricount = faces.length;
@@ -236,40 +276,24 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
     
     console.log(typeof pImpact[0]);
     console.log(typeof rotation[0]);
-    
-    // make a buffer which has one copy of the mesh for each cell
-    cl.arrtricells = new Int32Array(cl.cellCount * tricount);
-    cl.arrtris = new Float32Array(cl.cellCount * tricount * 3 * 4);
-    for (var c = 0; c < cl.cellCount; c++) {
-        for (var t = 0; t < tricount; t++) {
-            var ct = c * tricount + t;
-            cl.arrtricells[ct] = c;
-            for (var v = 0; v < 3; v++) {
-                var ctv = ((c * tricount + t) * 3 + v) * 4;
-                for (var a = 0; a < 3; a++) {
-                    cl.arrtris[ctv + a] = vertices[faces[t].points[v]][a];
-                }
-                cl.arrtris[ctv + 3] = 0;
-            }
-        }
-    }
-    // update tricount to reflect new buffer size
-    tricount = tricount * cl.cellCount;
+
+    var transform = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]; // TODO
+    tricount = clTransformCopyPerPlane(cl, vertices, faces, transform);
 
     var time_setupargs = 0;
     var time_kernel = 0;
     var time_outputtoinput = 0;
 
-    var blocksize = 256;
+    var localsize = 1;
     for (var i = 0; i < cl.cellBuffers.length; i++) {
         var t1 = performance.now();
 
-        clSetupArgs(cl, i);
+        clSetupArgs(cl, i, tricount);
 
         var t2 = performance.now();
 
-        var localWS = [blocksize];
-        var globalWS = [Math.ceil(tricount / blocksize) * blocksize];
+        var localWS = [localsize];
+        var globalWS = [Math.ceil(tricount / localsize) * localsize];
         cl.queue.enqueueNDRangeKernel(cl.kernel, globalWS.length, null, globalWS, localWS);
         cl.queue.finish();
 
