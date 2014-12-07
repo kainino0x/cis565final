@@ -269,7 +269,7 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
     var tricount = faces.length;
     
     pImpact.push(0);
-    cl.fractureCenter = new Float32Array(pImpact);
+    cl.fractureCenter = new Float32Array(mult3c(pImpact, -1));
     
     console.log(typeof pImpact[0]);
     console.log(typeof rotation[0]);
