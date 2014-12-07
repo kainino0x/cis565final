@@ -135,11 +135,11 @@ kernel void fracture(
     } else if (!cull2) { // XOR: if only one point is culled (p1), needs new face, add both to output
         // calculate new edge p1-p2
         float4 v = normalize(p1 - p2);
-        newP1 = p2 + v * -(dot(p2, pN) + pd) / dot(v, pN);
+        newP1 = p2 + v * -(dot(p2, pN) + pd) / dot(v, pN) * 0.95f;
         
         // calculate new edge p1-p3
         v = normalize(p1 - p3);
-        newP2 = p3 + v * -(dot(p3, pN) + pd) / dot(v, pN);
+        newP2 = p3 + v * -(dot(p3, pN) + pd) / dot(v, pN) * 0.95f;
         
         newTri1.a = newTri2.a = p2;
         if (winding) {
@@ -159,11 +159,11 @@ kernel void fracture(
     } else {             // two points culled (p1, p2), modify current face and add to output
         // calculate new edge p2 - p3
         float4 v = normalize(p2 - p3);
-        newP1 = p3 + v * -(dot(p3, pN) + pd) / dot(v, pN);
+        newP1 = p3 + v * -(dot(p3, pN) + pd) / dot(v, pN) * 0.95f;
         
         // calculate new edge p1-p3
         v = normalize(p1 - p3);
-        newP2 = p3 + v * -(dot(p3, pN) + pd) / dot(v, pN);
+        newP2 = p3 + v * -(dot(p3, pN) + pd) / dot(v, pN) * 0.95f;
         
         // set new points
         newTri1.a = newP1;

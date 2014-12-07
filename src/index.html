@@ -77,12 +77,12 @@ function zpad(number) {
 function loadFracturePattern() {
     var result = [];
 
-    var astModel = CubicVR.loadCollada("models/oct.dae", "models/");
+    var astModel = CubicVR.loadCollada("models/cubeshatter.dae", "models/");
 
     // TODO: make this more flexible with naming, or replace with our own voronoi decomp.
     for (var i = 0; i < 8; i++) {
-        var astMesh = astModel.getSceneObject("oct_cell_" + zpad(i)).getMesh();
-        var astPos = astModel.getSceneObject("oct_cell_" + zpad(i)).position;
+        var astMesh = astModel.getSceneObject("Cube_cell_" + zpad(i)).getMesh();
+        var astPos = astModel.getSceneObject("Cube_cell_" + zpad(i)).position;
         astMesh.buildEdges();
         
         // Currently also saves in the collision just for debugging.
@@ -196,6 +196,15 @@ function mat3mult(a, b) {
     mat.push(a[6] * b[2] + a[7] * b[5] + a[8] * b[8]);
     
     return mat;
+}
+
+function mat3vec3mult(m, v) {
+    var outVec = [];
+    outVec.push(m[0] * v[0] + m[1] * v[1] + m[2] * v[2]);
+    outVec.push(m[3] * v[0] + m[4] * v[1] + m[5] * v[2]);
+    outVec.push(m[6] * v[0] + m[7] * v[1] + m[8] * v[2]);
+    
+    return outVec;
 }
 
 function contains3c(a, c) {
@@ -666,8 +675,28 @@ function webGLStart() {
         scene.remove(obj);
         physics.remove(rigid);
         
-        var fractured = clFracture(cl, mesh.points, mesh.faces, toRotationMatrix(obj.lrotation), hit.localPosition);
-
+        var rot = toRotationMatrix(obj.lrotation);
+        var globalPos = mat3vec3mult(rot, hit.localPosition);
+        var fractured = clFracture(cl, mesh.points, mesh.faces, rot, globalPos);
+        
+        for (var i = 0; i < fracturePattern.length; i++) {
+            var fracMesh = fracturePattern[i].mesh;
+            var fracColl = fracturePattern[i].collision;
+            var fracPos = fracturePattern[i].position;
+            // Create new scene object
+            fracMesh.buildWireframe = true;
+            fracMesh.buildEdges();
+            console.log(fracMesh);
+            var o = new CubicVR.SceneObject({
+                name: name + "o",   
+                mesh: fracMesh,
+                wireframe: true,
+                position:[globalPos[0], globalPos[1], globalPos[2]],
+                rotation:obj.lrotation//obj.rotation.slice(0), //copy of the obj's rotation.
+            });
+            scene.bind(o);
+        }
+        
         for (var i = 0; i < fractured.length; i++) {
             var fracPos = [0, 0, 0]; // TODO
             var fr = fractured[i];

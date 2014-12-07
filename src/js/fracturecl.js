@@ -268,11 +268,8 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
     var vertcount = vertices.length;
     var tricount = faces.length;
     
-    cl.fractureCenter = new Float32Array(4);
-    cl.fractureCenter[0] = pImpact[0];
-    cl.fractureCenter[1] = pImpact[1];
-    cl.fractureCenter[2] = pImpact[2];
-    cl.fractureCenter[3] = 0;
+    pImpact.push(0);
+    cl.fractureCenter = new Float32Array(pImpact);
     
     console.log(typeof pImpact[0]);
     console.log(typeof rotation[0]);
