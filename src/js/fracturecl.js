@@ -184,6 +184,8 @@ function clSetupArgs(cl, iteration) {
 
     cl.kernel.setArg(7, cl.bufnewoutcells);
     cl.kernel.setArg(8, cl.bufnewout);
+    
+    cl.kernel.setArg(9, cl.fractureCenter);
 
     cl.queue.finish();
 }
@@ -222,10 +224,19 @@ function clOutputToInput(cl, oldtricount) {
     cl.queue.finish();
 }
 
-function clFracture(cl, vertices, faces) {
+function clFracture(cl, vertices, faces, rotation, pImpact) {
     var vertcount = vertices.length;
     var tricount = faces.length;
-
+    
+    cl.fractureCenter = new Float32Array(4);
+    cl.fractureCenter[0] = pImpact[0];
+    cl.fractureCenter[1] = pImpact[1];
+    cl.fractureCenter[2] = pImpact[2];
+    cl.fractureCenter[3] = 0;
+    
+    console.log(typeof pImpact[0]);
+    console.log(typeof rotation[0]);
+    
     // make a buffer which has one copy of the mesh for each cell
     cl.arrtricells = new Int32Array(cl.cellCount * tricount);
     cl.arrtris = new Float32Array(cl.cellCount * tricount * 3 * 4);

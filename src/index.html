@@ -607,8 +607,8 @@ function webGLStart() {
         // Remove the original object.
         scene.remove(obj);
         physics.remove(rigid);
-
-        var fractured = clFracture(cl, mesh.points, mesh.faces);
+        
+        var fractured = clFracture(cl, mesh.points, mesh.faces, obj.lrotation, hit.localPosition);
 
         for (var i = 0; i < fractured.length; i++) {
             var fracPos = [0, 0, 0]; // TODO

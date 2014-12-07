@@ -28,7 +28,9 @@ kernel void fracture(
 
         // Output new vertices for new face
         /*7*/ global          int *newoutcells, // len is tricount, -1 for nonexistent
-        /*8*/ global       float4 *newout       // len is tricount*2
+        /*8*/ global       float4 *newout,      // len is tricount*2
+        
+        /*9*/              float4  fracCenter
         ) {
     uint index = get_global_id(0);
     if (index >= tricount) {
@@ -46,7 +48,8 @@ kernel void fracture(
         return;
     }
     float4 pN = {_pla.xyz, 0};
-    float  pd = _pla.w;
+    // move the plane into local coordinate system.
+    float  pd = _pla.w + dot(pN, fracCenter);
     float4 pP = {0, 0, -pd / pN.z, 0};  // Arbitrarily calculate a point on the plane (z-axis intersection)
 
     struct Tri tri = tris[index];
@@ -150,7 +153,7 @@ kernel void fracture(
         // just new points.
         cellP = cell;
     }
-
+    
     // output triangles.
     trioutcells[2 * index] = cell1;
     triout[2 * index] = newTri1;
