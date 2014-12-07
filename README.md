@@ -143,10 +143,14 @@ How to handle?  Centroid connection does not work!
 
 Edge loops?
 
+##Stream Compaction
+In order to reduce gpu-cpu memory transfer.
+
 ##Island Detection
+Low priority, necessary both before and after partial fracture.  If implemented, then partial fracture needs to be in its own kernel or loop.
 
 ##Partial Fracture
 ###Algorithm:
 * label each cell as "affected" or "not affected"
 * after the intersection algorithm runs, combine all "not affected" fracture pieces into a single mesh (for our purposes, put them all into a single cell)
-* perform island detection on that mesh
+* (optional) perform island detection on that mesh
