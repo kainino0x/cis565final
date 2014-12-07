@@ -5,8 +5,8 @@
       <author>Blender User</author>
       <authoring_tool>Blender 2.72.0 commit date:2014-10-21, commit time:11:38, hash:9e963ae</authoring_tool>
     </contributor>
-    <created>2014-12-07T00:24:10</created>
-    <modified>2014-12-07T00:24:10</modified>
+    <created>2014-12-07T00:44:37</created>
+    <modified>2014-12-07T00:44:37</modified>
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
@@ -16,26 +16,6 @@
     </image>
   </library_images>
   <library_effects>
-    <effect id="Material_001-effect">
-      <profile_COMMON>
-        <technique sid="common">
-          <lambert>
-            <emission>
-              <color sid="emission">0 0 0 1</color>
-            </emission>
-            <ambient>
-              <color sid="ambient">0 0 0 1</color>
-            </ambient>
-            <diffuse>
-              <color sid="diffuse">0 0 0 1</color>
-            </diffuse>
-            <index_of_refraction>
-              <float sid="index_of_refraction">1</float>
-            </index_of_refraction>
-          </lambert>
-        </technique>
-      </profile_COMMON>
-    </effect>
     <effect id="Material-effect">
       <profile_COMMON>
         <technique sid="common">
@@ -58,47 +38,11 @@
     </effect>
   </library_effects>
   <library_materials>
-    <material id="Material_001-material" name="Material_001">
-      <instance_effect url="#Material_001-effect"/>
-    </material>
     <material id="Material-material" name="Material">
       <instance_effect url="#Material-effect"/>
     </material>
   </library_materials>
   <library_geometries>
-    <geometry id="Cube_001-mesh" name="Cube.001">
-      <mesh>
-        <source id="Cube_001-mesh-positions">
-          <float_array id="Cube_001-mesh-positions-array" count="24">-1 -1 -1 -1 1 -1 1 1 -1 1 -1 -1 -1 -1 1 -1 1 1 1 1 1 1 -1 1</float_array>
-          <technique_common>
-            <accessor source="#Cube_001-mesh-positions-array" count="8" stride="3">
-              <param name="X" type="float"/>
-              <param name="Y" type="float"/>
-              <param name="Z" type="float"/>
-            </accessor>
-          </technique_common>
-        </source>
-        <source id="Cube_001-mesh-normals">
-          <float_array id="Cube_001-mesh-normals-array" count="36">-1 0 0 0 1 0 1 0 0 0 -1 0 0 0 -1 0 0 1 -1 0 0 0 1 0 1 0 0 0 -1 0 0 0 -1 0 0 1</float_array>
-          <technique_common>
-            <accessor source="#Cube_001-mesh-normals-array" count="12" stride="3">
-              <param name="X" type="float"/>
-              <param name="Y" type="float"/>
-              <param name="Z" type="float"/>
-            </accessor>
-          </technique_common>
-        </source>
-        <vertices id="Cube_001-mesh-vertices">
-          <input semantic="POSITION" source="#Cube_001-mesh-positions"/>
-        </vertices>
-        <polylist material="Material_001-material" count="12">
-          <input semantic="VERTEX" source="#Cube_001-mesh-vertices" offset="0"/>
-          <input semantic="NORMAL" source="#Cube_001-mesh-normals" offset="1"/>
-          <vcount>3 3 3 3 3 3 3 3 3 3 3 3 </vcount>
-          <p>4 0 5 0 1 0 5 1 6 1 2 1 6 2 7 2 3 2 7 3 4 3 0 3 0 4 1 4 2 4 7 5 6 5 5 5 0 6 4 6 1 6 1 7 5 7 2 7 2 8 6 8 3 8 3 9 7 9 0 9 3 10 0 10 2 10 4 11 7 11 5 11</p>
-        </polylist>
-      </mesh>
-    </geometry>
     <geometry id="Mesh_298-mesh" name="Mesh.298">
       <mesh>
         <source id="Mesh_298-mesh-positions">
@@ -1752,29 +1696,6 @@
   </library_geometries>
   <library_visual_scenes>
     <visual_scene id="Scene" name="Scene">
-      <node id="Cube" name="Cube" type="NODE">
-        <matrix sid="transform">2 0 0 -0.05666102 0 2 0 0.03480824 0 0 2 0.06611067 0 0 0 1</matrix>
-        <translate sid="location">-0.05666102 0.03480824 0.06611067</translate>
-        <rotate sid="rotationZ">0 0 1 0</rotate>
-        <rotate sid="rotationY">0 1 0 0</rotate>
-        <rotate sid="rotationX">1 0 0 0</rotate>
-        <scale sid="scale">2 2 2</scale>
-        <instance_geometry url="#Cube_001-mesh">
-          <bind_material>
-            <technique_common>
-              <instance_material symbol="Material_001-material" target="#Material_001-material"/>
-            </technique_common>
-          </bind_material>
-        </instance_geometry>
-      </node>
-      <node id="Field" name="Field" type="NODE">
-        <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
-        <translate sid="location">0 0 0</translate>
-        <rotate sid="rotationZ">0 0 1 0</rotate>
-        <rotate sid="rotationY">0 1 0 0</rotate>
-        <rotate sid="rotationX">1 0 0 0</rotate>
-        <scale sid="scale">1 1 1</scale>
-      </node>
       <node id="Cube_cell_000" name="Cube_cell_000" type="NODE">
         <matrix sid="transform">1 0 0 -0.5768976 0 1 0 -1.02766 0 0 1 -1.43322 0 0 0 1</matrix>
         <translate sid="location">-0.5768976 -1.02766 -1.43322</translate>
