@@ -277,7 +277,11 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
     console.log(typeof pImpact[0]);
     console.log(typeof rotation[0]);
 
-    var transform = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]; // TODO
+    var transform = [rotation[0], rotation[1], rotation[2], 0,
+                     rotation[3], rotation[4], rotation[5], 0,
+                     rotation[6], rotation[7], rotation[8], 0,
+                               0,           0,           0, 1];
+                               
     tricount = clTransformCopyPerPlane(cl, vertices, faces, transform);
 
     var time_setupargs = 0;
