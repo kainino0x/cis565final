@@ -82,21 +82,22 @@ kernel void scanIter(
         return;
     }
     
-    if (index >= pow(2, iter)) {
-        bufout[index] = bufin[index - pow(2, iter - 1)] + bufin[index];
+    if (index >= pow(2.0f, iter)) {
+        bufout[index] = bufin[index - (int)(pow(2.0f, iter - 1) + 0.01f)] + bufin[index];
     } else {
         bufout[index] = bufin[index];
     }
 }
+
 // may need separate scatters (eg. scatterTri, scatterPoints, ...)
 // don't need scanInput's output because you can just check if tricells[index] == -1
-kernel void scatterTris{
+kernel void scatterTris(
         /*0*/                uint  tricount,        // size of original array
         /*1*/ constant        int *tricells,        // len is tricount
         /*2*/ constant struct Tri *tris,            // len is tricount
-        /*3*/ constant        int  scatterout,      // len is (minimum power of 2 greater than tricount)
-        /*4*/ global          int *trioutcells      // len is scatterout[tricount]
-        /*5*/ global          int *triout           // len is scatterout[tricount]
+        /*3*/ constant        int *scatterout,      // len is (minimum power of 2 greater than tricount)
+        /*4*/ global          int *trioutcells,      // len is scatterout[tricount]
+        /*5*/ global   struct Tri *triout           // len is scatterout[tricount]
         ){
     uint index = get_global_id(0);
     if (index >= tricount) {
@@ -110,12 +111,12 @@ kernel void scatterTris{
 }
 
 // don't need scanInput's output because you can just check if tricells[index] == -1
-kernel void scatterPoints{
+kernel void scatterPoints(
         /*0*/                uint  pointcount,        // size of original array
         /*1*/ constant        int *pointcells,        // len is pointcount
         /*2*/ constant     float4 *points,            // len is pointcount
-        /*3*/ constant        int  scatterout,        // len is (minimum power of 2 greater than pointcount)
-        /*4*/ global          int *pointoutcells      // len is scatterout[pointcount]
+        /*3*/ constant        int *scatterout,        // len is (minimum power of 2 greater than pointcount)
+        /*4*/ global          int *pointoutcells,      // len is scatterout[pointcount]
         /*5*/ global       float4 *pointout           // len is scatterout[pointcount]
         ){
     uint index = get_global_id(0);
