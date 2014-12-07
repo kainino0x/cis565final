@@ -137,3 +137,16 @@ Our code now parallelizes on a per-clipping-face-per-mesh-triangle level.  We ru
 One key feature is that we no longer handle the mesh as a whole (we still keep track), but as a set of unrelated triangles.  We take this triangle "soup" and run it through the algorithm, getting new triangles with each iteration.  These triangles can be connected by merging identical points at the end of the algorithm if a closed mesh is desired, but disconnected triangles works for our purposes.
 
 The loop runs for max(#cellfaces) iterations.  The kernel processes a triangle-clipping plane pair with a cell number attached to it, and returns a list of triangles and a list of new points.  We take this list and generate a set of new triangles to add to the list, and reiterate.
+
+###Concave Plane Intersections
+How to handle?  Centroid connection does not work!
+
+Edge loops?
+
+##Island Detection
+
+##Partial Fracture
+###Algorithm:
+* label each cell as "affected" or "not affected"
+* after the intersection algorithm runs, combine all "not affected" fracture pieces into a single mesh (for our purposes, put them all into a single cell)
+* perform island detection on that mesh
