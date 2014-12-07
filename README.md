@@ -4,7 +4,13 @@ Fall 2014
 -----------
 Jiatong He, Kai Ninomiya
 -----------
-https://www.graphics.rwth-aachen.de/media/teaching_files/mueller_siggraph12.pdf
+
+[Live demo](https://kainino0x.github.io/cis565final/src/):
+requires the [Nokia WebCL plugin](http://webcl.nokiaresearch.com/) for Firefox.
+
+Based on
+[Real Time Dynamic Fracture with Volumetric Approximate Convex Decompositions](https://www.graphics.rwth-aachen.de/media/teaching_files/mueller_siggraph12.pdf)
+by Müller, Chentanez, and Kim.
 
 Algorithm Overview
 -----------------
