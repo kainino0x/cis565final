@@ -48,7 +48,7 @@ function clSetCells(cl, cells) {
         var cell = cells[i].mesh;
         var center = cells[i].position;
 
-        var cellPlanes = cellToPlanes(cell, center);
+        var cellPlanes = cellToPlanes(cell, center, center);
         planesPerCell.push(cellPlanes);
     }
 

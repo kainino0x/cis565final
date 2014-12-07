@@ -77,12 +77,12 @@ function zpad(number) {
 function loadFracturePattern() {
     var result = [];
 
-    var astModel = CubicVR.loadCollada("models/cubeshatter.dae", "models/");
+    var astModel = CubicVR.loadCollada("models/oct.dae", "models/");
 
     // TODO: make this more flexible with naming, or replace with our own voronoi decomp.
     for (var i = 0; i < 8; i++) {
-        var astMesh = astModel.getSceneObject("Cube_cell_" + zpad(i)).getMesh();
-        var astPos = astModel.getSceneObject("Cube_cell_" + zpad(i)).position;
+        var astMesh = astModel.getSceneObject("oct_cell_" + zpad(i)).getMesh();
+        var astPos = astModel.getSceneObject("oct_cell_" + zpad(i)).position;
         astMesh.buildEdges();
         
         // Currently also saves in the collision just for debugging.
@@ -222,12 +222,12 @@ function flipEdge(e) {
     return edge;
 }
 
-function cellToPlanes(cell, center) {
+function cellToPlanes(cell, center, position) {
     var cellPlanes = [];
     for (var i = 0; i < cell.faces.length; i++) {
-        var p1 = cell.points[cell.faces[i].points[0]].slice();
-        var p2 = cell.points[cell.faces[i].points[1]].slice();
-        var p3 = cell.points[cell.faces[i].points[2]].slice();
+        var p1 = add3(cell.points[cell.faces[i].points[0]], position);
+        var p2 = add3(cell.points[cell.faces[i].points[1]], position);
+        var p3 = add3(cell.points[cell.faces[i].points[2]], position);
         
         // flips the normal if it's facing inward
         var norm = cross3(sub3(p2, p1), sub3(p3, p1));
@@ -244,7 +244,7 @@ function cellToPlanes(cell, center) {
 }
 
 // extremely naive sequential implementation of intersection algorithm.
-function intersect(mesh, cell) {
+function intersect(mesh, cell, cellPos) {
     // compute 
     var points = mesh.points.slice();
     var faces = [];
@@ -255,6 +255,7 @@ function intersect(mesh, cell) {
         center = [center[0] + cell.points[i][0], center[1] + cell.points[i][1], center[2] + cell.points[i][2]];
     }
     center = [center[0]/points.length, center[1]/points.length, center[2]/points.length];
+    center = add3(center, cellPos);
     
     // Generates the array of points.
     /* points is an float[3] with properties:
@@ -676,9 +677,8 @@ function webGLStart() {
         physics.remove(rigid);
         
         var rot = toRotationMatrix(obj.lrotation);
-        var globalPos = mat3vec3mult(rot, hit.localPosition);
+        var globalPos = sub3(hit.position, obj.position);
         var fractured = clFracture(cl, mesh.points, mesh.faces, rot, globalPos);
-        
         for (var i = 0; i < fracturePattern.length; i++) {
             var fracMesh = fracturePattern[i].mesh;
             var fracColl = fracturePattern[i].collision;
@@ -686,13 +686,11 @@ function webGLStart() {
             // Create new scene object
             fracMesh.buildWireframe = true;
             fracMesh.buildEdges();
-            console.log(fracMesh);
             var o = new CubicVR.SceneObject({
-                name: name + "o",   
+                name: name + "oasdf" + i,
                 mesh: fracMesh,
-                wireframe: true,
-                position:[globalPos[0], globalPos[1], globalPos[2]],
-                rotation:obj.lrotation//obj.rotation.slice(0), //copy of the obj's rotation.
+                position:add3(add3(obj.position, fracPos), globalPos),
+                rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
             });
             scene.bind(o);
         }
@@ -724,7 +722,7 @@ function webGLStart() {
             var fracColl = fracturePattern[i].collision;
             var fracPos = fracturePattern[i].position;
             
-            var isx = intersect(mesh, fracMesh);
+            var isx = intersect(mesh, fracMesh, fracPos);
             addMeshToScene(mesh.name + "_" + i, obj, rigid, fracPos, isx);
         }
     };
