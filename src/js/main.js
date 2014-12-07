@@ -425,15 +425,19 @@ function webGLStart() {
             position: [5, 5, -5],
             target: [0, -3, 0]
         },
-        light: {
-            type: "area",
-            intensity: 0.9,
-            mapRes: 2048,
-            areaCeiling: 40,
-            areaFloor: -40,
-            areaAxis: [-2,-2], // specified in degrees east/west north/south
-            distance: 60
-        }
+        light: [
+        { type: "directional", intensity: 0.3, direction: [-0.5, -1, 0] },
+        { type: "directional", intensity: 0.7, direction: [ 0.5, -1, 0] },
+        //{
+        //    type: "area",
+        //    intensity: 0.9,
+        //    mapRes: 2048,
+        //    areaCeiling: 40,
+        //    areaFloor: -40,
+        //    areaAxis: [-2,-2], // specified in degrees east/west north/south
+        //    distance: 60
+        //},
+        ]
     });
 
     CubicVR.setSoftShadows(true);
