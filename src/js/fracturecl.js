@@ -46,8 +46,17 @@ function clSetCells(cl, cells) {
 
     for (var i = 0; i < cells.length; i++) {
         var cell = cells[i].mesh;
-        var center = cells[i].position;
-
+        var center = cells[i].position; //NOTE: This assumes that the position of each cell is inside of it!
+        /*
+        var center = [0,0,0];
+        for (var j = 0; j < cells[i].mesh.points.length; j++) {
+            center = add3(center, cells[i].mesh.points[j]);
+        }
+        center = add3(mult3c(center, 1 / cells[i].mesh.points.length), cells[i].position);
+        
+        console.log(center);
+        */
+        
         var cellPlanes = cellToPlanes(cell, center, center);
         planesPerCell.push(cellPlanes);
     }
