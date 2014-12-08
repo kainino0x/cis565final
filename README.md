@@ -38,11 +38,11 @@ A pre-generated test fracture pattern (series of solid meshes):
 * webCL implementation of makeFaces() (needs webCL scan).
 * ~~correct orientation/center of fracture pieces.~~
 * ~~center the fracture pattern on point of impact.~~
-* sew fractured pieces back together based on proximity to point of impact.
+* ~~sew fractured pieces back together based on proximity to point of impact.~~
 * scale fracture patterns up to the mesh geometry(or generate sufficiently large ones) (or generate one with a single outer cell whose fac normals all point outwards?)
 * ~~Find the correct center of meshes (for better RBD in bullet)~~
 * correctly handle concave surfaces (island detection).
-* Modify linear velocity based on direction and distance from impact point.
+* ~~Modify linear velocity based on direction and distance from impact point.~~
 * Optimization: Welding step (replace fragments with cell mesh if the fragment completely fills the cell).
 * Optimization: detecting collinear edges and merging their faces
 * performance testing, profiling, other optimizations.
