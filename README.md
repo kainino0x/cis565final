@@ -53,12 +53,8 @@ by Müller, Chentanez, and Kim._
 * [Performance Analysis](#performance-analysis)
   * [Fracture Performance](#fracture-performance)
     * [Intersection: GPU vs. CPU, Parallel vs. Sequential](#intersection-gpu-vs-cpu-parallel-vs-sequential)
-  * [Stream Compaction](#stream-compaction-1)
-    * [Parallel vs. Sequential](#parallel-vs-sequential)
+  * [Stream Compaction: Parallel vs. Sequential](#stream-compaction-parallel-vs-sequential)
   * [WebCL Performance](#webcl-performance)
-    * [Kernel Execution](#kernel-execution)
-    * [Setting Arguments](#setting-arguments)
-    * [Reading/Writing Data from/to Processing Unit](#readingwriting-data-fromto-processing-unit)
   * [CubicVR's Limits in Real-Time Simulation](#cubicvrs-limits-in-real-time-simulation)
 
 ##Algorithm Overview
@@ -147,14 +143,48 @@ Because our main focus was creating the fractured geometry, we looked for an exi
 
 ##Performance Analysis
 ###Fracture Performance
+We began to implement fracture using a naive sequential algorithm as a proof-of-concept.  The algorithm runs somewhat differently compared to the parallel algorithm (it sequentially does the clipping planes on the entire mesh, and keeps the mesh closed), but it's nice as a basis of comparison.
 ####Intersection: GPU vs. CPU, Parallel vs. Sequential
+We compared the runtime of our code on the GPU vs. the CPU, as well as the parallel and sequential implementations of the intersection.
 
-###Stream Compaction
-####Parallel vs. Sequential
+![](https://github.com/kainino0x/cis565final/blob/master/img/performance/cpu_gpu_fracture.png)
+
+_Runtime of the fracture algorithm on the CPU compared to the GPU_
+
+The main thing to notice here is that the CPU and GPU times are nearly identical.  I have no explanation for why reads/writes have the same runtime, as well as kernels.  It may just be an issue with a data set that's too small.
+
+![](https://github.com/kainino0x/cis565final/blob/master/img/performance/p_s_intersection.png)
+
+_Runtime of the parallel algorithm compared a naive sequential version_
+
+Ignoring the part of the parallel graph where it starts to dip down, it's generally clear that the parallel algorithm does not scale very quickly with increasing triangle count, while the sequential algorithm begins taking far more time with each step.  While this graph does not show it, the sequential implementation quickly surpasses the parallel implementation in runtime with higher number of triangles, as expected.
+
+
+###Stream Compaction: Parallel vs. Sequential
+Each time we clip a plane-per-cell from the set of triangles, we're left with a lot of culled triangles that can be removed to keep memory costs low.  We implemented both a sequential remove (iterating through and adding valid triangles to another array) and a parallel stream compaction.  The sequential remove requires copying memory back onto the CPU, then performing the remove in javascript, while the stream compaction keeps everything on the GPU.
+
+![](https://github.com/kainino0x/cis565final/blob/master/img/performance/stream_compact_sequential.png)
+
+_Runtime of the stream compaction algorithm vs. a sequential remove_
+
+Strangely enough, the stream compaction (though a naive implementation) performs far worse than the sequential remove, which requires a lot of back-and-forth between the CPU and GPU.  We weren't sure what was causing this, so we investigated the performance of WebCL to see if that was the issue (Stream Compaction makes a LOT of webCL calls).
 
 ###WebCL Performance
-####Kernel Execution
-####Setting Arguments
-####Reading/Writing Data from/to Processing Unit
+
+![](https://github.com/kainino0x/cis565final/blob/master/img/performance/webcl_cpu_gpu.png)
+
+_WebCL runtimes on the GPU and CPU.  Note how they are nearly identical_
+
+As expected from the Intersection performance analysis, the GPU and CPU calls are actually nearly identical.  The only possible error is in the "Run Kernel" values in each, since they may be affected by our worksize setup.  The runtimes of each of the other calls average to around 0.8ms each.  This quickly adds up when you need to make somee 50 of these calls for each face-per-cell, along with running the actual kernel.  We suspect that the poor performance of the parallel algorithms are due to this slower runtime.
 
 ###CubicVR's Limits in Real-Time Simulation
+
+CubicVR posed some challenges to our simulation, specifically in how our fragmented shards were added to the scene.  The main factor is computing the collision detection surface on each of the shards.  Using a convex hull collision, the processing time from CubicVR was far higher (~80% of the total time) than the time taken during our algorithm.  However, convex hull collisions ran quickly in the simulator.  In order to prevent long freezes, we switched over to mesh collision ang got the following results:
+
+![](https://github.com/kainino0x/cis565final/blob/master/img/performance/cubicvr_time.png)
+
+_CubicVR's contribution to the total time of our algorithm_
+
+Now CubicVR is no longer the source of the bottleneck of our algorithm, but mesh collision runs much more slowly than convex hull collision.
+
+The issue here is the large number of triangles we are generating.  Convex hulls take a long time to calculate for meshes with large triangle counts.  We can reduce the calculation time by implementing optimizations that reduce the geometry for each shard (they end up with far more faces than is necessar) such as the "welding" step.
