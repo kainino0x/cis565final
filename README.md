@@ -5,11 +5,13 @@ Fall 2014
 Jiatong He, Kai Ninomiya
 -----------
 
+[Demo Video](https://www.youtube.com/watch?v=13sbZia4Kjc) on YouTube.
+
 ![](https://github.com/kainino0x/cis565final/blob/master/img/manyshatter.png)
 
 Our goal was to create a gpu-accelerated interactive real-time mesh fracture application that runs in the browser.  We used WebCL to parallelize the algorithm and CubicVR to render and simulate the rigid bodies.
 
-[Live demo](https://kainino0x.github.io/cis565final/src/):
+[Live Demo](https://kainino0x.github.io/cis565final/src/):
 requires the [Nokia WebCL plugin](http://webcl.nokiaresearch.com/) for Firefox.
 
 >**Controls**
