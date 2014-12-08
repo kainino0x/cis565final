@@ -14,6 +14,9 @@ Based on
 [Real Time Dynamic Fracture with Volumetric Approximate Convex Decompositions](https://www.graphics.rwth-aachen.de/media/teaching_files/mueller_siggraph12.pdf)
 by Müller, Chentanez, and Kim.
 
+###Working with WebCL
+####Performance Issues
+
 Algorithm Overview
 -----------------
 ###Fracturing
@@ -28,15 +31,19 @@ A pre-generated test fracture pattern (series of solid meshes):
 ####Alignment
 #####Paralelization
 
-
 ####Intersection
 #####Paralelization
+
+#####Performance Analysis:  CPU vs. GPU, Parallel vs. Sequential
 
 ####Welding
 
 ####Island Detection
 
 ####Stream Compaction
+#####Paralelization
+
+#####Performance Analysis:  CPU vs. GPU, Parallel vs. Sequential
 
 ###Partial Fracture
 
@@ -45,7 +52,9 @@ A pre-generated test fracture pattern (series of solid meshes):
 
 ####Problems with CubicVR & Ammo.js
 
+
 ---------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ##Paralelization of the Intersection Algorithm
 The goal of this algorithm was to find a method to clip meshes that had the least amount of dependence between units.  With this in mind, we came up with the following:
