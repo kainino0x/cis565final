@@ -127,7 +127,7 @@ Our implementation uses stream compaction to remove culled triangles each iterat
 #####Parallelization
 The reason we wanted to do stream compaction on the GPU was to reduce the amount of memory transfer between CPU and GPU.  Each time our plane clipping kernel returned, we would need to copy the entire output back onto the CPU, remove bad values, add new faces, and put everything back into the GPU.  If stream compaction were parallelized, we would not have that problem.
 
-We implemented stream compaction in WebCL, but ran into some performance issues that made it much slower than the copy+process on CPU method.  As a result, we abandoned the stream compaction and are now removing bad values sequentially.  The performance analysis section furhter below contains more details about this issue.
+We implemented stream compaction in WebCL, but ran into some performance issues that made it much slower than the copy+process on CPU method.  As a result, we abandoned the stream compaction (the code is still in the stream-compaction branch) and are now removing bad values sequentially.  The performance analysis section furhter below contains more details about this issue.
 
 ####Partial Fracture
 This feature is noteworthy because we technically cheated this one.  Instead of properly combining faces, or doing some processing, we just group all the fragments that are not in the area of effect into a single mesh.  This means that said mesh will have: 1, several times more geometry than other fragments, 2, faces inside of the mesh, and 3, slightly overlapping/disconnected edges on the surface.
