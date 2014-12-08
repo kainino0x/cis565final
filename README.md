@@ -34,8 +34,10 @@ _Based on
 [Real Time Dynamic Fracture with Volumetric Approximate Convex Decompositions](https://www.graphics.rwth-aachen.de/media/teaching_files/mueller_siggraph12.pdf)
 by Müller, Chentanez, and Kim._
 
-Algorithm Overview
------------------
+##Table of Contents
+* [Algorithm Overview](#Algorithm Overview)
+
+##Algorithm Overview
 ###Fracturing
 At a high level, fracturing is implemented by performing boolean intersection
 between segments of a fracture pattern and the segments of the object to be
@@ -74,8 +76,7 @@ Rather than allowing the entire mesh to be fractured, we only fully shard the ce
 
 _\* : not implemented._
 
-Implementation Details
--------------------
+##Implementation Details
 ![](https://github.com/kainino0x/cis565final/blob/master/img/donutshatter.png)
 
 _A fractured torus_
@@ -84,12 +85,12 @@ _A fractured torus_
 The fracturing algorithm was our greatest challenge.  It's an algorithm that is naturally sequential--clipping polygons usually requires some knowledge of neighbors and other information.  However, we devised a method that succesfully targets independent pieces of the algorithm at the cost of some accuracy.
 ####Intersection
 Our intersection algorithm is simple clipping planes.  For each cell, the mesh is clipped by each cell face to give us the shard.  What's interesting is how we parallelized it.
-#####Parallelization
+#####Parallelization of Intersection
 Our strategy for the parallelization of the intersection was to treat the mesh as a set of disconnected triangles.  By doing so, we could parallelize by-cell-by-triangle.  For each face of the cell, we clip each triangle in the mesh by that face independently, then create the new faces for them.  We can process all cells at once, and iterate a total number of times equal to the maximum number of faces in a single cell.
 
 ####Stream Compaction
 Our implementation uses stream compaction to remove culled triangles each iteration in order to keep the number of triangles under control (otherwise it could grow at a rate of 2^n).  We tried both a sequential and a parallel version of this algorithm to see which one was better.  The sequential implementation simply iterates through the list and pushes non-culled objects into a new array.
-#####Parallelization
+#####Parallelization of Stream Compaction
 The reason we wanted to do stream compaction on the GPU was to reduce the amount of memory transfer between CPU and GPU.  Each time our plane clipping kernel returned, we would need to copy the entire output back onto the CPU, remove bad values, add new faces, and put everything back into the GPU.  If stream compaction were parallelized, we would not have that problem.
 
 We implemented stream compaction in WebCL, but ran into some performance issues that made it much slower than the copy+process on CPU method.  As a result, we abandoned the stream compaction and are now removing bad values sequentially.  The performance analysis section furhter below contains more details about this issue.
@@ -103,15 +104,14 @@ _The body on the upper-left is the merged mesh.  See how its individual componen
 
 ###Working with WebCL
 Because our target was an in-browser experience, we were limited to two choices for GPU-acceleration:  WebGL and WebCL.  While WebGL runs natively in most browsers, it does not yet support compute shaders as of this time, so we would have had to hack a solution using textures and feedbacks.  WebCL, on the other hand, is supported by **no** browsers, but Nokia has a plugin that can run it.  We chose to use WebCL for its flexibility compared to WebGL.
-####Performance Issues
+####WebCL Performance Issues
 We did, however, run into some performance issues with WebCL that were severe enough that a GPU stream compaction was slower than a sequential javascript method.  You can see a comparison between the two in the Performance Analysis section.  In addition, we logged the runtimes of individual set args, read/write, and kernel calls to show how slow it actually is.
 
 ###Integration into an Existing Renderer/Rigid Body Simulator (CubicVR)
 Because our main focus was creating the fractured geometry, we looked for an existing renderer and rigid body simulator.  CubicVR (physics built on ammo.js, which is compiled from bullet) provides a very simple-to-use library for both, though we ran into some issues here as well.  The performance issues we had with usingCubicVR are detailed in the Performance Analysis section of the readme.
 
 
-Performance Analysis
---------------------
+##Performance Analysis
 ###Fracture Performance
 ####Intersection: GPU vs. CPU, Parallel vs. Sequential
 
