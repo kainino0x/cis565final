@@ -94,7 +94,14 @@ The fracturing algorithm was our greatest challenge.  It's an algorithm that is 
 ####Intersection
 Our intersection algorithm is simple clipping planes.  For each cell, the mesh is clipped by each cell face to give us the shard.  What's interesting is how we parallelized it.
 #####Parallelization
+Parallelization of a fracturing algorithm turned out to be much less
+straightforward than initially anticipated. Since dynamic memory allocation in
+WebCL was not possible, we needed to find an equivalent algorithm that would be
+iterable and have predictable memory usage at every iteration.
+
 Our strategy for the parallelization of the intersection was to treat the mesh as a set of disconnected triangles.  By doing so, we could parallelize by-cell-by-triangle.  For each face of the cell, we clip each triangle in the mesh by that face independently, then create the new faces for them.  We can process all cells at once, and iterate a total number of times equal to the maximum number of faces in a single cell.
+
+![](img/parallelalg.png)
 
 ####Stream Compaction
 Our implementation uses stream compaction to remove culled triangles each iteration in order to keep the number of triangles under control (otherwise it could grow at a rate of 2^n).  We tried both a sequential and a parallel version of this algorithm to see which one was better.  The sequential implementation simply iterates through the list and pushes non-culled objects into a new array.
