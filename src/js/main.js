@@ -25,9 +25,9 @@ function updateGeoStats(scene) {
 function generateObjects() {
     var result = [];
     
-    var astModel = CubicVR.loadCollada("models/wall.dae", "models/");
+    var astModel = CubicVR.loadCollada("models/cube.dae", "models/");
     // Add a ast to mesh, size 1.0
-    var astObj = astModel.getSceneObject("wall");
+    var astObj = astModel.getSceneObject("Cube");
     
     var astMesh = astObj.getMesh();
     

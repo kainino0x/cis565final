@@ -131,6 +131,14 @@ function pushfloat4(arr, val) {
     arr.push(0);
 }
 
+function pdistance(e1, e2) {
+    return length3(sub3([e1.x, e1.y, e1.z], [e2.x, e2.y, e2.z]));
+}
+
+function asxyz(v) {
+    return {x: v[0], y: v[1], z: v[2]};
+}
+
 function makeFace(indices, points) {
     var lastidx = -1;
     var faces = [];
@@ -159,19 +167,44 @@ function makeFace(indices, points) {
             continue;
         }
 
-        var centr = [0, 0, 0];
+        // Create an adjacency-list sort of thing from the edges we get in
+        var points = [];
         for (var j = 0; j < f.length; j++) {
-            centr = add3(centr, add3(f[j][0], f[j][1]));
+            var fj = f[j];
+            var e0 = asxyz(fj[0]); e0.other = 1; e0.j = j;
+            var e1 = asxyz(fj[1]); e1.other = 0; e1.j = j;
+            points.push(e0, e1);
         }
-        centr = mult3c(centr, 0.5 / f.length);
 
-        // Create a tri from the centroid and the two points on each edge
-        for (var i = 0; i < f.length; i++) {
-            idxout.push(iface);
-            pushfloat4(values, centr);
-            pushfloat4(values, f[i][0]);
-            pushfloat4(values, f[i][1]);
+        // Put all the points into a tree
+        var tree = new kdTree(points, pdistance, ['x', 'y', 'z']);
+
+        // This should create a loop that goes in the direction of the first edge
+        var vertloop = [f[0][0]];
+        var laste = asxyz(f[0][0]); laste.other = 1; laste.j = 0;
+        for (var j = 1; j <= f.length; j++) {
+            var near = tree.nearest(asxyz(f[laste.j][laste.other]), 2);
+            var e = near[0][0];
+            if (e.j == laste.j) {
+                e = near[1][0];
+            }
+            vertloop.push([e.x, e.y, e.z]);
+            laste = e;
         }
+
+        //console.log(vertloop);
+
+        // Create a triangle fan between the first vert and the rest of the verts
+
+        var v0 = vertloop[0];
+        for (var i = 1; i < vertloop.length - 1; i++) {
+            idxout.push(iface);
+            pushfloat4(values, v0);
+            pushfloat4(values, vertloop[i]);
+            pushfloat4(values, vertloop[i + 1]);
+        }
+
+        // TODO: Why do some of the triangles come out wound the wrong way?
     }
 
     return {indices: idxout, values: values};
