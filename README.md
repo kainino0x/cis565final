@@ -190,3 +190,21 @@ _CubicVR's contribution to the total time of our algorithm_
 Now CubicVR is no longer the source of the bottleneck of our algorithm, but mesh collision runs much more slowly than convex hull collision.
 
 The issue here is the large number of triangles we are generating.  Convex hulls take a long time to calculate for meshes with large triangle counts.  We can reduce the calculation time by implementing optimizations that reduce the geometry for each shard (they end up with far more faces than is necessar) such as the "welding" step.
+
+## References
+
+[1] Matthias Müller, Nuttapong Chentanez, and Tae-Yong Kim. 2013.
+    Real time dynamic fracture with volumetric approximate convex decompositions.
+    ACM Trans. Graph. 32, 4, Article 115 (July 2013), 10 pages.
+    DOI=10.1145/2461912.2461934 http://doi.acm.org/10.1145/2461912.2461934
+
+[2] stats.js. Copyright 2009-2012 Mr.doob. Used under MIT License.
+    https://github.com/mrdoob/stats.js
+
+[3] CubicVR 3D Engine. Javascript Port of the CubicVR 3D Engine by Charles J. Cliffe.
+    Used under MIT License.
+    https://github.com/cjcliffe/CubicVR.js
+
+[4] ammo.js. A direct port of the Bullet physics engine to JavaScript, using Emscripten.
+    Used under zlib License.
+    https://github.com/kripken/ammo.js
