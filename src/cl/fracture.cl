@@ -69,7 +69,7 @@ kernel void getScanInput(
     }
     uint readindex = index - 1;
     if (index < count) {
-        if (cellnums[readindex] > -1) {
+        if (cellnums[readindex] != -1) {
             scaninput[index] = 1;
         } else {
             scaninput[index] = 0;

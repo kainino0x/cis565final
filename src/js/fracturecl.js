@@ -15,7 +15,7 @@ function index3(array, index) {
             array[4 * index + 1],
             array[4 * index + 2]];
 }
-
+ var at0 = 0, at1 = 0, at2 = 0, atime1 = 0, atime2 = 0, atime3 = 0;
 function clInit() {
     var ctx = webcl.createContext(/*WebCL.DEVICE_TYPE_GPU*/);
     var kernelSrc = loadKernel("fracturecl");
@@ -215,35 +215,32 @@ function clSetupArgs(cl, iteration, tricount) {
 
 function clOutputToInput(cl, oldtricount) {
     cl.buftris.release();
-
-    var arrtrioutcells = new   Int32Array(oldtricount * 2);
-    var arrtriout      = new Float32Array(oldtricount * 2 * 12);
-    var arrnewoutcells = new   Int32Array(oldtricount);
-    var arrnewout      = new Float32Array(oldtricount * 2 * 4)
-    cl.queue.enqueueReadBuffer(cl.buftrioutcells, false, 0, arrtrioutcells.byteLength, arrtrioutcells);
-    cl.queue.enqueueReadBuffer(cl.buftriout     , false, 0, arrtriout     .byteLength, arrtriout     );
-    cl.queue.enqueueReadBuffer(cl.bufnewoutcells, false, 0, arrnewoutcells.byteLength, arrnewoutcells);
-    cl.queue.enqueueReadBuffer(cl.bufnewout     , false, 0, arrnewout     .byteLength, arrnewout     );
     
     var localsize = 1;
     var localWS = [localsize];
-    
     //----------------------------------------------------------
     // stream compaction for the points (do this first so we can merge into triangles more easily)
     var scanSize = Math.pow(2.0, Math.ceil(Math.log2(oldtricount)));
     var globalWS = [Math.ceil(scanSize / localsize) * localsize];
     
+    at0 = performance.now();
     // we will be performing a naive double-buffered scan
     cl.scanpointoutA = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, scanSize * 4);
     cl.scanpointoutB = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, scanSize * 4);
+    at1 = performance.now();
     
     cl.scaninitkernel.setArg(0, new Uint32Array([oldtricount]));
     cl.scaninitkernel.setArg(1, cl.bufnewoutcells);
     cl.scaninitkernel.setArg(2, new Uint32Array([scanSize]));
     cl.scaninitkernel.setArg(3, cl.scanpointoutA);
     
+    at2 = performance.now();
     // this kernel fills cl.scantrioutA with 0's and 1's depending on the cellID in cl.buftrioutcells
     cl.queue.enqueueNDRangeKernel(cl.scaninitkernel, globalWS.length, null, globalWS, localWS);
+    cl.queue.finish();
+    atime1 += performance.now() - at0;
+    atime2 += performance.now() - at1;
+    atime3 += performance.now() - at2;
     
     // debug
     /*
@@ -263,7 +260,7 @@ function clOutputToInput(cl, oldtricount) {
         }
     }*/
     // end debug
-    
+    at0 = performance.now();
     var i = 0;  // keeps track of where the final result is.
     cl.scaniterkernel.setArg(1, new Uint32Array([scanSize]));
     // NOTE: used to have these alternate 2, 3 in the loop based on i % 2, but it seems like handling it in the kernel is faster for some reason.  needs further testing.
@@ -274,7 +271,10 @@ function clOutputToInput(cl, oldtricount) {
         cl.scaniterkernel.setArg(0, new Uint32Array([i]));
         cl.queue.enqueueNDRangeKernel(cl.scaniterkernel, globalWS.length, null, globalWS, localWS);
     }
-        
+    cl.queue.finish();
+    //atime2 += performance.now() - at0;
+    
+    at0 = performance.now();
     // NOTE: we need to copy cl.scantrioutA/B in order to get the correct triangle count.  Is there a better way?
     var scanout = new Int32Array(scanSize);
     if (i % 2 == 0) {
@@ -309,6 +309,7 @@ function clOutputToInput(cl, oldtricount) {
         cl.queue.enqueueReadBuffer(cl.bufscatpointsout, false, 0, scatteroutpoints.byteLength, scatteroutpoints);
     }
     cl.queue.finish();
+    //atime3 += performance.now() - at0;
     // END STREAM COMPACTION FOR POINTS
     
     
@@ -361,6 +362,7 @@ function clOutputToInput(cl, oldtricount) {
     }
         
     // NOTE: we need to copy cl.scantrioutA/B in order to get the correct triangle count.  Is there a better way?
+    // TODO: convert the reads to (cl.scantrioutA, false, (scanSize - 1) * 4, 4, scanout);
     var scanout = new Int32Array(scanSize);
     if (i % 2 == 0) {
         // A has the final output
@@ -374,28 +376,51 @@ function clOutputToInput(cl, oldtricount) {
     
     // the size of the array after compaction
     var newtricount = scanout[scanSize - 1];
-    
-    // TODO: once point compaction is working, and faces are generated, initialize the size of this array to the combined size.
-    cl.bufscattriout      = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, newtricount * 12 * 4);
-    cl.bufscattrioutcells = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, newtricount      * 4);
-    
-    cl.scatterkernel['tris'].setArg(0, new Uint32Array([oldtricount * 2]));
-    cl.scatterkernel['tris'].setArg(1, cl.buftriout);
-    cl.scatterkernel['tris'].setArg(2, cl.buftrioutcells);
-    // NOTE: arg3 is set in the if-else statement above.
-    cl.scatterkernel['tris'].setArg(4, new Uint32Array([newtricount]));
-    cl.scatterkernel['tris'].setArg(5, cl.bufscattriout);
-    cl.scatterkernel['tris'].setArg(6, cl.bufscattrioutcells);
-    cl.queue.enqueueNDRangeKernel(cl.scatterkernel['tris'], globalWS.length, null, globalWS, localWS);
-    
-    var scatterouttriscells = new Int32Array(newtricount);
-    cl.queue.enqueueReadBuffer(cl.bufscattrioutcells, false, 0, scatterouttriscells.byteLength, scatterouttriscells);  
-    var scatterouttris = new Float32Array(newtricount * 12);
-    cl.queue.enqueueReadBuffer(cl.bufscattriout, false, 0, scatterouttris.byteLength, scatterouttris);
+    if (newtricount > 0) {
+        // TODO: once point compaction is working, and faces are generated, initialize the size of this array to the combined size.
+        cl.bufscattriout      = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, newtricount * 12 * 4);
+        cl.bufscattrioutcells = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, newtricount      * 4);
+        
+        cl.scatterkernel['tris'].setArg(0, new Uint32Array([oldtricount * 2]));
+        cl.scatterkernel['tris'].setArg(1, cl.buftriout);
+        cl.scatterkernel['tris'].setArg(2, cl.buftrioutcells);
+        // NOTE: arg3 is set in the if-else statement above.
+        cl.scatterkernel['tris'].setArg(4, new Uint32Array([newtricount]));
+        cl.scatterkernel['tris'].setArg(5, cl.bufscattriout);
+        cl.scatterkernel['tris'].setArg(6, cl.bufscattrioutcells);
+        cl.queue.enqueueNDRangeKernel(cl.scatterkernel['tris'], globalWS.length, null, globalWS, localWS);
+        
+        var scatterouttriscells = new Int32Array(newtricount);
+        cl.queue.enqueueReadBuffer(cl.bufscattrioutcells, false, 0, scatterouttriscells.byteLength, scatterouttriscells);  
+        var scatterouttris = new Float32Array(newtricount * 12);
+        cl.queue.enqueueReadBuffer(cl.bufscattriout, false, 0, scatterouttris.byteLength, scatterouttris);
+    }
     cl.queue.finish();
     
     //TODO: release all the things used in stream compaction.
     // END STREAM COMPACTION CODE
+    cl.scanpointoutA.release();
+    cl.scanpointoutB.release();
+    cl.bufscatpointsout.release();
+    cl.bufscatpointsoutcells.release();
+    cl.scantrioutA.release();
+    cl.scantrioutB.release();
+    cl.bufscattriout.release();
+    cl.bufscattrioutcells.release();
+    cl.buftrioutcells.release();
+    cl.buftriout     .release();
+    cl.bufnewoutcells.release();
+    cl.bufnewout     .release();
+    /* OLD SEQUENTIAL IMPLEMENTATION
+    var arrtrioutcells = new   Int32Array(oldtricount * 2);
+    var arrtriout      = new Float32Array(oldtricount * 2 * 12);
+    var arrnewoutcells = new   Int32Array(oldtricount);
+    var arrnewout      = new Float32Array(oldtricount * 2 * 4)
+    cl.queue.enqueueReadBuffer(cl.buftrioutcells, false, 0, arrtrioutcells.byteLength, arrtrioutcells);
+    cl.queue.enqueueReadBuffer(cl.buftriout     , false, 0, arrtriout     .byteLength, arrtriout     );
+    cl.queue.enqueueReadBuffer(cl.bufnewoutcells, false, 0, arrnewoutcells.byteLength, arrnewoutcells);
+    cl.queue.enqueueReadBuffer(cl.bufnewout     , false, 0, arrnewout     .byteLength, arrnewout     );
+    
     cl.buftrioutcells.release();
     cl.buftriout     .release();
     cl.bufnewoutcells.release();
@@ -407,7 +432,7 @@ function clOutputToInput(cl, oldtricount) {
     var tris = tmp.values;
     tmp = floatNcompact( 8, arrnewoutcells, arrnewout);
     var newcells = tmp.indices;
-    var news = tmp.values;
+    var news = tmp.values;*/
 
     //debug - check correctness of stream compaction
     /*
@@ -451,8 +476,12 @@ function clOutputToInput(cl, oldtricount) {
     if (scatteroutpointscells) {
         b = Array.prototype.slice.call(scatteroutpointscells);
     }
-    c = Array.prototype.slice.call(scatterouttris);
-    d = Array.prototype.slice.call(scatterouttriscells);
+    if (scatterouttris) {
+        c = Array.prototype.slice.call(scatterouttris);
+    }
+    if (scatterouttriscells) {
+        d = Array.prototype.slice.call(scatterouttriscells);
+    }
     
     tmp = makeFace(b, a);
     d = d.concat(tmp.indices);
@@ -615,6 +644,9 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
     console.log("        time_setupargs: "     + time_setupargs);
     console.log("        time_kernel: "        + time_kernel);
     console.log("        time_outputtoinput: " + time_outputtoinput);
+    console.log("           time_kernel1: " + atime1);
+    console.log("           time_kernel2: " + atime2);
+    console.log("           time_kernel3: " + atime3);
     console.log("        time_proximity: "     + time_proximity);
     console.log("    time_collect: "           + time_collect);
     console.log("    time_recenter: "          + time_recenter);
