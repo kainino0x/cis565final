@@ -53,8 +53,7 @@ by Müller, Chentanez, and Kim._
 * [Performance Analysis](#performance-analysis)
   * [Fracture Performance](#fracture-performance)
     * [Intersection: GPU vs. CPU, Parallel vs. Sequential](#intersection-gpu-vs-cpu-parallel-vs-sequential)
-  * [Stream Compaction](#stream-compaction-1)
-    * [Parallel vs. Sequential](#parallel-vs-sequential)
+  * [Stream Compaction: Parallel vs. Sequential](#stream-compaction-1)
   * [WebCL Performance](#webcl-performance)
     * [Kernel Execution](#kernel-execution)
     * [Setting Arguments](#setting-arguments)
@@ -147,10 +146,25 @@ Because our main focus was creating the fractured geometry, we looked for an exi
 
 ##Performance Analysis
 ###Fracture Performance
+We began to implement fracture using a naive sequential algorithm as a proof-of-concept.  The algorithm runs somewhat differently compared to the parallel algorithm (it sequentially does the clipping planes on the entire mesh, and keeps the mesh closed), but it's nice as a basis of comparison.
 ####Intersection: GPU vs. CPU, Parallel vs. Sequential
+We compared the runtime of our code on the GPU vs. the CPU, as well as the parallel and sequential implementations of the intersection.
 
-###Stream Compaction
-####Parallel vs. Sequential
+![](https://github.com/kainino0x/cis565final/blob/master/img/performance/cpu_gpu_fracture.png)
+
+_Runtime of the fracture algorithm on the CPU compared to the GPU_
+
+The main thing to notice here is that the CPU and GPU times are nearly identical.  I have no explanation for why reads/writes have the same runtime, as well as kernels.  It may just be an issue with a data set that's too small.
+
+![](https://github.com/kainino0x/cis565final/blob/master/img/performance/p_s_intersection.png)
+
+_Runtime of the parallel algorithm compared a naive sequential version_
+
+Ignoring the part of the parallel graph where it starts to dip down, it's generally clear that the parallel algorithm does not scale very quickly with increasing triangle count, while the sequential algorithm begins taking far more time with each step.  While this graph does not show it, the sequential implementation quickly surpasses the parallel implementation in runtime with higher number of triangles, as expected.
+
+
+###Stream Compaction: Parallel vs. Sequential
+
 
 ###WebCL Performance
 ####Kernel Execution
