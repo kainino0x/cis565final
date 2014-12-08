@@ -502,6 +502,8 @@ function webGLStart() {
         // Intersect each fracture pattern with hull to generate a new hull.
         // Alternatively, intersect mesh with obj.mesh to generate a new mesh.
 
+        var t0 = performance.now();
+
         var m = new CubicVR.Mesh({
             name: name + "m",
             //wireframe: true,
@@ -521,6 +523,8 @@ function webGLStart() {
         m.calcNormals();
         m.compile();
 
+        var t1 = performance.now();
+
         // Create new scene object
         var o = new CubicVR.SceneObject({
             name: name + "o",   
@@ -530,6 +534,8 @@ function webGLStart() {
             rotation:[0,0,0]//obj.rotation.slice(0), //copy of the obj's rotation.
         });
 
+        var t2 = performance.now();
+
         // Create new collision map
         var coll = new CubicVR.CollisionMap({
             //type: CubicVR.enums.collision.shape.CONVEX_HULL,
@@ -538,6 +544,8 @@ function webGLStart() {
             //size: isx.size,
             mesh: m,
         });
+
+        var t3 = performance.now();
 
         // Create new rigid body
         // Need to pass in the linear and angular velocity as well.
@@ -557,12 +565,21 @@ function webGLStart() {
         r.setLinearVelocity(add3(lvel, lvelrot));
         r.setAngularVelocity(avel);
 
+        var t4 = performance.now();
+
+        console.log("      v  time_newmesh:        " + (t1 - t0));
+        console.log("      v  time_newobject:      " + (t2 - t1));
+        console.log("      v  time_newcollision:   " + (t3 - t2));
+        console.log("      v  time_newrigidbody:   " + (t4 - t3));
+        console.log("   v  time_addMeshToScene:   " + (t4 - t0));
+
         scene.bind(o);
         physics.bind(r);
         //console.log(o);
     };
 
     var fracture = function(ray, hit) {
+        var t0;
         var rigid = hit.rigidBody;
         var obj = rigid.sceneObject;
         var mesh = obj.getMesh();
@@ -577,6 +594,8 @@ function webGLStart() {
         var rot = toRotationMatrix(obj.lrotation);
         var globalPos = sub3(hit.position, obj.position);
         var fractured = clFracture(cl, mesh.points, mesh.faces, rot, globalPos);
+
+        t0 = performance.now();
         for (var i = 0; i < fracturePattern.length; i++) {
             if (!cl.proximate[i]) {
                 continue;
@@ -597,7 +616,9 @@ function webGLStart() {
             scene.bind(o);
             o.visible = debugfracturemesh;
         }
+        console.log("time_add_debug_pattern:  " + (performance.now() - t0));
         
+        t0 = performance.now();
         for (var i = 0; i < fractured.length; i++) {
             var fr = fractured[i];
             if (fr) {
@@ -605,6 +626,7 @@ function webGLStart() {
                 addMeshToScene(mesh.name + "_" + i, obj, rigid, fracPos, fr);
             }
         }
+        console.log("time_add_shards:         " + (performance.now() - t0));
     }
     
     // Fractures the hit mesh using fracturePattern.  The geometry of the target mesh is
