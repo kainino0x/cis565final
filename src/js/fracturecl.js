@@ -38,6 +38,11 @@ function clInit() {
     cl.kernel = program.createKernel("fracture");
     cl.copykernel = program.createKernel("transformCopyPerPlane");
     cl.proxkernel = program.createKernel("applyProximity");
+    cl.scaninitkernel = program.createKernel("getScanInput");
+    cl.scaniterkernel = program.createKernel("scanIter");
+    cl.scatterkernel = [];  // not sure if this is necessary, or what to put here if it is.
+    cl.scatterkernel['tris'] = program.createKernel("scatterTris");
+    cl.scatterkernel['points'] = program.createKernel("scatterPoints");
     cl.queue = ctx.createCommandQueue(device);
     return cl;
 }
@@ -219,11 +224,51 @@ function clOutputToInput(cl, oldtricount) {
     cl.queue.enqueueReadBuffer(cl.buftriout     , false, 0, arrtriout     .byteLength, arrtriout     );
     cl.queue.enqueueReadBuffer(cl.bufnewoutcells, false, 0, arrnewoutcells.byteLength, arrnewoutcells);
     cl.queue.enqueueReadBuffer(cl.bufnewout     , false, 0, arrnewout     .byteLength, arrnewout     );
+
+    
+    var scatterSize = Math.pow(2.0, Math.ceil(Math.log2(oldtricount * 2)));
+    
+    var localsize = 1;
+    var localWS = [localsize];
+    var globalWS = [Math.ceil(scatterSize / localsize) * localsize];
+    
+    cl.scantrioutA = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, scatterSize);
+    cl.scantrioutB = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, scatterSize);
+    
+    cl.scaninitkernel.setArg(0, new Uint32Array([oldtricount * 2]));
+    cl.scaninitkernel.setArg(1, cl.buftrioutcells);
+    cl.scaninitkernel.setArg(2, new Uint32Array([scatterSize]));
+    cl.scaninitkernel.setArg(3, cl.scantrioutA);
+    
+    cl.queue.enqueueNDRangeKernel(cl.scaninitkernel, globalWS.length, null, globalWS, localWS);
+    cl.queue.finish();
+    
+    for (var i = 0; Math.pow(2, i) < scatterSize; i++) {
+        cl.scaniterkernel.setArg(0, new Uint32Array([i]));
+        cl.scaniterkernel.setArg(1, new Uint32Array([scatterSize]));
+        if (i % 2 == 0) {
+            cl.scaniterkernel.setArg(2, cl.scantrioutA);
+            cl.scaniterkernel.setArg(3, cl.scantrioutB);
+        } else {
+            cl.scaniterkernel.setArg(2, cl.scantrioutB);
+            cl.scaniterkernel.setArg(3, cl.scantrioutA);
+        }
+        cl.queue.enqueueNDRangeKernel(cl.scaniterkernel, globalWS.length, null, globalWS, localWS);
+        cl.queue.finish();
+    }
+    
+    var scatteroutA = new Int32Array(scatterSize);
+    cl.queue.enqueueReadBuffer(cl.scantrioutA, false, 0, scatteroutA.byteLength, scatteroutA);
+    var scatteroutB = new Int32Array(scatterSize);
+    cl.queue.enqueueReadBuffer(cl.scantrioutB, false, 0, scatteroutB.byteLength, scatteroutB);
+    
+    
+    
     cl.buftrioutcells.release();
     cl.buftriout     .release();
     cl.bufnewoutcells.release();
     cl.bufnewout     .release();
-
+    
     var tmp;
     tmp = floatNcompact(12, arrtrioutcells, arrtriout);
     var tricells = tmp.indices;

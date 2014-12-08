@@ -63,8 +63,12 @@ kernel void getScanInput(
     if (index >= outcount) {
         return;
     }
-    if (index >= count || cellnums[index] == -1) {
-        scaninput[index] = 0;
+    if (index < count) {
+        if (cellnums[index] == -1) {
+            scaninput[index] = 0;
+        } else {
+            scaninput[index] = 1;
+        }
     } else {
         scaninput[index] = 1;
     }
