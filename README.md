@@ -73,6 +73,7 @@ _A pre-generated test fracture pattern (series of solid meshes):_
 
 ####Alignment
 The first step is to align the fracture pattern with the point of impact.
+
 ![](https://github.com/kainino0x/cis565final/blob/master/img/cutout.png)
 
 _The wireframe is the impacted mesh, the solid is the fracture pattern_
@@ -81,6 +82,7 @@ We use the point the user clicks on the object as the point of impact, and trans
 
 ####Intersection
 The mesh must then be intersected with the fracture mesh, resulting in one shard per cell of the fracture pattern.  A simple way to do this is to clip the mesh against each face of the cell, for each cell in the fracture pattern.
+
 ![](https://github.com/kainino0x/cis565final/blob/master/img/cubepatternsolid.png)
 
 _A solid render of the 3D fracture pattern we are using_
