@@ -288,29 +288,39 @@ function clVertfaceToTris(cl, vertices, faces) {
         }
     }
 }
-
+var cltime = 0, clbuffertime = 0, clwritereadtime = 0, clsetargtime = 0, clrunkerneltime = 0;
 function clTransformCopyPerPlane(cl, vertices, faces, transform) {
     var tricount = faces.length;
 
     // Create the array of triangle data for one copy of the mesh
     clVertfaceToTris(cl, vertices, faces);
-
+    
+    cltime = performance.now();
     // Allocate memory for one copy per cell of the mesh
     cl.buftricells = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, cl.cellCount * tricount      * 4);
     cl.buftris     = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, cl.cellCount * tricount * 12 * 4);
-    cl.queue.enqueueWriteBuffer(cl.buftris, false, 0, cl.arrtris.byteLength, cl.arrtris);
+    clbuffertime = (performance.now() - cltime) / 2;
+    
+    cltime = performance.now();
+    cl.queue.enqueueWriteBuffer(cl.buftris, true, 0, cl.arrtris.byteLength, cl.arrtris);
+    clwritereadtime = performance.now() - cltime;
+    
+    cltime = performance.now();
     cl.copykernel.setArg(0, new Uint32Array([cl.cellCount]));
     cl.copykernel.setArg(1, new Float32Array(transform));
     cl.copykernel.setArg(2, new Uint32Array([tricount]));
     cl.copykernel.setArg(3, cl.buftricells);
     cl.copykernel.setArg(4, cl.buftris);
+    clsetargtime = (performance.now() - cltime) / 5;
 
     var localsize = 1;
     var localWS = [localsize];
     var globalWS = [Math.ceil(tricount / localsize) * localsize];
+    cltime = performance.now();
     cl.queue.enqueueNDRangeKernel(cl.copykernel, globalWS.length, null, globalWS, localWS);
 
     cl.queue.finish();
+    clrunkerneltime = performance.now() - cltime;
 
     return tricount * cl.cellCount;
 }
@@ -441,6 +451,10 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
     console.log("v  time_collect:             " + time_collect);
     console.log("v  time_recenter:            " + time_recenter);
     console.log("time_clFracture:             " + time_clFracture);
+    console.log("time_create_clbuffer         " + clbuffertime);
+    console.log("time_write_read_clbuffer     " + clwritereadtime);
+    console.log("time_set_clarg               " + clsetargtime);
+    console.log("time_run_simplekernel        " + clrunkerneltime);
 
     return cellfaces;
 }
