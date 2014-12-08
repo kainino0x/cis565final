@@ -568,7 +568,7 @@ function webGLStart() {
         var mesh = obj.getMesh();
         mesh.buildEdges();
         mesh.calcFaceNormals(); // face normals will be used in the clipping calculation to preserve the correct winding.
-        
+        console.log("START_NUM_FACES =" + mesh.faces.length);
         // Remove the original object.
         scene.remove(obj);
         physics.remove(rigid);

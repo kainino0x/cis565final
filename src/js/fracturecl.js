@@ -212,7 +212,7 @@ function clSetupArgs(cl, iteration, tricount) {
 
     cl.queue.finish();
 }
-
+var streamTP = 0, streamTS = 0, streamT = 0;
 function clOutputToInput(cl, oldtricount) {
     cl.buftris.release();
     
@@ -302,7 +302,7 @@ function clOutputToInput(cl, oldtricount) {
     cl.queue.finish();
     // END STREAM COMPACTION FOR POINTS
     
-    
+    streamT = performance.now();
     // ------------------------------------------------------------------------------------------------------------
     // stream compaction for the triangles
     var scanSize = Math.pow(2.0, Math.ceil(Math.log2(oldtricount * 2)));
@@ -396,12 +396,16 @@ function clOutputToInput(cl, oldtricount) {
     cl.scantrioutA.release();
     cl.scantrioutB.release();
     cl.bufscattriout.release();
-    cl.bufscattrioutcells.release();
+    cl.bufscattrioutcells.release();/*
     cl.buftrioutcells.release();
     cl.buftriout     .release();
     cl.bufnewoutcells.release();
-    cl.bufnewout     .release();
-    /* OLD SEQUENTIAL IMPLEMENTATION
+    cl.bufnewout     .release();*/
+    
+    streamTP += performance.now() - streamT;
+    
+    streamT = performance.now();
+    // OLD SEQUENTIAL IMPLEMENTATION
     var arrtrioutcells = new   Int32Array(oldtricount * 2);
     var arrtriout      = new Float32Array(oldtricount * 2 * 12);
     var arrnewoutcells = new   Int32Array(oldtricount);
@@ -422,7 +426,8 @@ function clOutputToInput(cl, oldtricount) {
     var tris = tmp.values;
     tmp = floatNcompact( 8, arrnewoutcells, arrnewout);
     var newcells = tmp.indices;
-    var news = tmp.values;*/
+    var news = tmp.values;
+    streamTS += performance.now() - streamT;
 
     //debug - check correctness of stream compaction
     /*
@@ -637,6 +642,8 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
     console.log("        time_proximity: "     + time_proximity);
     console.log("    time_collect: "           + time_collect);
     console.log("    time_recenter: "          + time_recenter);
+    console.log("    time_Stream_Parallel: "           + streamTP);
+    console.log("    time_Stream_Sequential: "          + streamTS);
 
     return cellfaces;
 }
