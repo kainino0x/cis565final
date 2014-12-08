@@ -46,17 +46,22 @@ A pre-generated test fracture pattern (series of solid meshes):
 ![](img/fracturepattern.png)
 ^REPLACE WITH NEW IMAGE
 ####Alignment
-The first step is to align the fracture pattern with the point of impact.  We use the point the user clicks on the object as
+The first step is to align the fracture pattern with the point of impact.  We use the point the user clicks on the object as the point of impact, and transform the fracture mesh appropriately (all meshes are centered at 0,0,0).
 
 ####Intersection
+The mesh must then be intersected with the fracture mesh, resulting in one shard per cell of the fracture pattern.  A simple way to do this is to clip the mesh against each face of the cell, for each cell in the fracture pattern.
+[FRACTURE_DIAGRAM]()
 
 ####Welding*
+If a shard completely fills a cell, then it can be replaced with the cell's geometry.  This reduces the number of triangles produced by the intersection.
 
 ####Island Detection*
+If a clipping cell results in disconnected pieces within a cell, island detection should be used to split those pieces into multiple shards, instead of just one.  That way you won't have disconnected pieces moving together as though they were one mesh.
 
 ###Partial Fracture
+Partial fracture occurs if we limit the area of effect of the fracture to some distance around the point of impact.  Rather than allowing the entire mesh to be fractured, we only fully shard the cells within the area of effect.  Shards in cells outside of the area of effect can be merged together back into a single mesh.
 
-\* : not implemented.
+_\* : not implemented._
 
 Implementation Details
 -------------------
