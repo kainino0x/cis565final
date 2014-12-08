@@ -5,7 +5,7 @@ Fall 2014
 Jiatong He, Kai Ninomiya
 -----------
 
-[IMAGE_1]()
+![](https://github.com/kainino0x/cis565final/blob/master/img/manyshatter.png)
 
 Our goal was to create a gpu-accelerated interactive real-time mesh fracture application that runs in the browser.  We used WebCL to parallelize the algorithm and CubicVR to render and simulate the rigid bodies.
 
@@ -41,12 +41,17 @@ At a high level, fracturing is implemented by performing boolean intersection
 between segments of a fracture pattern and the segments of the object to be
 fractured.  The fracture pattern can be pre-generated, as is the case for our implementation.
 
-A pre-generated test fracture pattern (series of solid meshes):
+![](https://github.com/kainino0x/cis565final/blob/master/img/cubepattern.png)
 
-![](img/fracturepattern.png)
-^REPLACE WITH NEW IMAGE
+_A pre-generated test fracture pattern (series of solid meshes):_
+
 ####Alignment
-The first step is to align the fracture pattern with the point of impact.  We use the point the user clicks on the object as the point of impact, and transform the fracture mesh appropriately (all meshes are centered at 0,0,0).
+The first step is to align the fracture pattern with the point of impact.
+![](https://github.com/kainino0x/cis565final/blob/master/img/cutout.png)
+
+_The wireframe is the impacted mesh, the solid is the fracture pattern_
+
+We use the point the user clicks on the object as the point of impact, and transform the fracture mesh appropriately (all meshes are centered at 0,0,0).
 
 ####Intersection
 The mesh must then be intersected with the fracture mesh, resulting in one shard per cell of the fracture pattern.  A simple way to do this is to clip the mesh against each face of the cell, for each cell in the fracture pattern.
@@ -59,12 +64,22 @@ If a shard completely fills a cell, then it can be replaced with the cell's geom
 If a clipping cell results in disconnected pieces within a cell, island detection should be used to split those pieces into multiple shards, instead of just one.  That way you won't have disconnected pieces moving together as though they were one mesh.
 
 ###Partial Fracture
-Partial fracture occurs if we limit the area of effect of the fracture to some distance around the point of impact.  Rather than allowing the entire mesh to be fractured, we only fully shard the cells within the area of effect.  Shards in cells outside of the area of effect can be merged together back into a single mesh.
+Partial fracture occurs if we limit the area of effect of the fracture to some distance around the point of impact.
+
+![](https://github.com/kainino0x/cis565final/blob/master/img/wallshatter.png)
+
+_Notice how the bottom and right sides of the wall stay intact while the upper-left is fractured_
+
+Rather than allowing the entire mesh to be fractured, we only fully shard the cells within the area of effect.  Shards in cells outside of the area of effect can be merged together back into a single mesh.
 
 _\* : not implemented._
 
 Implementation Details
 -------------------
+![](https://github.com/kainino0x/cis565final/blob/master/img/donutshatter.png)
+
+_A fractured torus_
+
 ###Fracturing
 The fracturing algorithm was our greatest challenge.  It's an algorithm that is naturally sequential--clipping polygons usually requires some knowledge of neighbors and other information.  However, we devised a method that succesfully targets independent pieces of the algorithm at the cost of some accuracy.
 ####Intersection
@@ -81,6 +96,10 @@ We implemented stream compaction in WebCL, but ran into some performance issues 
 
 ####Partial Fracture
 This feature is noteworthy because we technically cheated this one.  Instead of properly combining faces, or doing some processing, we just group all the fragments that are not in the area of effect into a single mesh.  This means that said mesh will have: 1, several times more geometry than other fragments, 2, faces inside of the mesh, and 3, slightly overlapping/disconnected edges on the surface.
+
+![](https://github.com/kainino0x/cis565final/blob/master/img/wallwireframe.png)
+
+_The body on the upper-left is the merged mesh.  See how its individual components are clearly visible in the wireframe?_
 
 ###Working with WebCL
 Because our target was an in-browser experience, we were limited to two choices for GPU-acceleration:  WebGL and WebCL.  While WebGL runs natively in most browsers, it does not yet support compute shaders as of this time, so we would have had to hack a solution using textures and feedbacks.  WebCL, on the other hand, is supported by **no** browsers, but Nokia has a plugin that can run it.  We chose to use WebCL for its flexibility compared to WebGL.
