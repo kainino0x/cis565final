@@ -81,7 +81,9 @@ We use the point the user clicks on the object as the point of impact, and trans
 
 ####Intersection
 The mesh must then be intersected with the fracture mesh, resulting in one shard per cell of the fracture pattern.  A simple way to do this is to clip the mesh against each face of the cell, for each cell in the fracture pattern.
-[FRACTURE_DIAGRAM]()
+![](https://github.com/kainino0x/cis565final/blob/master/img/cubepatternsolid.png)
+
+_A solid render of the 3D fracture pattern we are using_
 
 ####Welding*
 If a shard completely fills a cell, then it can be replaced with the cell's geometry.  This reduces the number of triangles produced by the intersection.
