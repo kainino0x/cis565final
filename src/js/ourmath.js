@@ -22,6 +22,10 @@ function length3(a) {
     return Math.sqrt(a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
 }
 
+function compwise(f, a, b) {
+    return [f(a[0], b[0]), f(a[1], b[1]), f(a[2], b[2])];
+}
+
 function normalize3(a) {
     var length = length3(a);
     return [a[0]/length, a[1]/length, a[2]/length];

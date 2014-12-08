@@ -426,17 +426,17 @@ function webGLStart() {
             target: [0, -3, 0]
         },
         light: [
-        { type: "directional", intensity: 0.3, direction: [-0.5, -1, 0] },
-        { type: "directional", intensity: 0.7, direction: [ 0.5, -1, 0] },
-        //{
-        //    type: "area",
-        //    intensity: 0.9,
-        //    mapRes: 2048,
-        //    areaCeiling: 40,
-        //    areaFloor: -40,
-        //    areaAxis: [-2,-2], // specified in degrees east/west north/south
-        //    distance: 60
-        //},
+        //{ type: "directional", intensity: 0.3, direction: [-0.5, -1, 0] },
+        //{ type: "directional", intensity: 0.7, direction: [ 0.5, -1, 0] },
+        {
+            type: "area",
+            intensity: 0.9,
+            mapRes: 2048,
+            areaCeiling: 40,
+            areaFloor: -40,
+            areaAxis: [-2,-2], // specified in degrees east/west north/south
+            distance: 60
+        },
         ]
     });
 
@@ -532,7 +532,10 @@ function webGLStart() {
 
         // Create new collision map
         var coll = new CubicVR.CollisionMap({
-            type: CubicVR.enums.collision.shape.CONVEX_HULL,
+            //type: CubicVR.enums.collision.shape.CONVEX_HULL,
+            type: CubicVR.enums.collision.shape.MESH,
+            //type: CubicVR.enums.collision.shape.BOX,
+            //size: isx.size,
             mesh: m,
         });
 

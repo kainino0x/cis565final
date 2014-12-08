@@ -352,7 +352,8 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
         var idx = cl.arrtricells[i] + 2; // so that -2 becomes a valid cell
         var c = cellfaces[idx];
         if (!c) {
-            c = cellfaces[idx] = {points: [], faces: [], position: [0,0,0]};
+            c = cellfaces[idx] = {points: [], faces: [],
+                min: [10000, 10000, 10000], max: [-10000, -10000, -10000]};
         }
 
         for (var v = 0; v < 3; v++) {
@@ -361,7 +362,8 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
                      cl.arrtris[off + 1],
                      cl.arrtris[off + 2]]
             c.points.push(p);
-            c.position = add3(c.position, p);
+            c.min = compwise(Math.min, c.min, p);
+            c.max = compwise(Math.max, c.max, p);
         }
         var ci = c.faces.length * 3;
         c.faces.push([ci, ci + 1, ci + 2]);
@@ -375,7 +377,8 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
             continue;
         }
 
-        c.position = mult3c(c.position, 1.0 / c.points.length);
+        c.position = mult3c(add3(c.min, c.max), 0.5);
+        c.size = sub3(c.max, c.min);
         for (var j = 0; j < c.points.length; j++) {
             c.points[j] = sub3(c.points[j], c.position);
         }
