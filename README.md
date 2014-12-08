@@ -66,9 +66,21 @@ _\* : not implemented._
 Implementation Details
 -------------------
 ###Fracturing
+The fracturing algorithm was our greatest challenge.  It's an algorithm that is naturally sequential--clipping polygons usually requires some knowledge of neighbors and other information.  However, we devised a method that succesfully targets independent pieces of the algorithm at the cost of some accuracy.
+####Intersection
+Our intersection algorithm is simple clipping planes.  For each cell, the mesh is clipped by each cell face to give us the shard.  What's interesting is how we parallelized it.
+#####Parallelization
+Our strategy for the parallelization of the intersection was to treat the mesh as a set of disconnected triangles.  By doing so, we could parallelize by-cell-by-triangle.  For each face of the cell, we clip each triangle in the mesh by that face independently, then create the new faces for them.  We can process all cells at once, and iterate a total number of times equal to the maximum number of faces in a single cell.
 
 ####Stream Compaction
-#####Paralelization
+Our implementation uses stream compaction to remove culled triangles each iteration in order to keep the number of triangles under control (otherwise it could grow at a rate of 2^n).  We tried both a sequential and a parallel version of this algorithm to see which one was better.  The sequential implementation simply iterates through the list and pushes non-culled objects into a new array.
+#####Parallelization
+The reason we wanted to do stream compaction on the GPU was to reduce the amount of memory transfer between CPU and GPU.  Each time our plane clipping kernel returned, we would need to copy the entire output back onto the CPU, remove bad values, add new faces, and put everything back into the GPU.  If stream compaction were parallelized, we would not have that problem.
+
+We implemented stream compaction in WebCL, but ran into some performance issues that made it much slower than the copy+process on CPU method.  As a result, we abandoned the stream compaction and are now removing bad values sequentially.  The performance analysis section furhter below contains more details about this issue.
+
+####Partial Fracture
+This feature is noteworthy because we technically cheated this one.  Instead of properly combining faces, or doing some processing, we just group all the fragments that are not in the area of effect into a single mesh.  This means that said mesh will have: 1, several times more geometry than other fragments, 2, faces inside of the mesh, and 3, slightly overlapping/disconnected edges on the surface.
 
 ###Working with WebCL
 ####Performance Issues
