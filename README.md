@@ -145,7 +145,7 @@ Because our main focus was creating the fractured geometry, we looked for an exi
 
 ##Performance Analysis
 
-Performance measurements were taken one one of the following setups. (Performance comparisons are on one machine.)
+Performance measurements were taken on one of the following setups. (Performance comparisons are on one machine.)
 
 * Arch Linux, Intel i5-4670 + NVIDIA GTX 750 (CPU/GPU comparisons)
 * Windows 8.1, Intel i7-4700HQ (CPU-only measurements)
