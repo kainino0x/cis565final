@@ -459,7 +459,7 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
 
     var time_clFracture = performance.now() - tInit;
 
-    console.log("v  time_transformcopy:       " + time_transformcopy);
+    /*console.log("v  time_transformcopy:       " + time_transformcopy);
     console.log("      v time_setup_input:    " + time_setup_input);
     console.log("      v time_setup_rest:     " + time_setup_rest);
     console.log("   v  time_setupargs:        " + time_setupargs);
@@ -472,7 +472,7 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
     console.log("   v  time_proximity:        " + time_proximity);
     console.log("v  time_total_iterations:    " + time_total_iterations);
     console.log("v  time_collect:             " + time_collect);
-    console.log("v  time_recenter:            " + time_recenter);
+    console.log("v  time_recenter:            " + time_recenter);*/
     console.log("time_clFracture:             " + time_clFracture);
     console.log("time_create_clbuffer         " + clbuffertime);
     console.log("time_write_read_clbuffer     " + clwritereadtime);

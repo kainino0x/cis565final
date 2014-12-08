@@ -566,12 +566,12 @@ function webGLStart() {
         r.setAngularVelocity(avel);
 
         var t4 = performance.now();
-
+/*
         console.log("      v  time_newmesh:       " + (t1 - t0));
         console.log("      v  time_newobject:     " + (t2 - t1));
         console.log("      v  time_newcollision:  " + (t3 - t2));
         console.log("      v  time_newrigidbody:  " + (t4 - t3));
-        console.log("   v  time_addMeshToScene:   " + (t4 - t0));
+        console.log("   v  time_addMeshToScene:   " + (t4 - t0));*/
 
         scene.bind(o);
         physics.bind(r);
