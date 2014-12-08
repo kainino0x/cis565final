@@ -299,11 +299,24 @@ function clTransformCopyPerPlane(cl, vertices, faces, transform) {
     // Allocate memory for one copy per cell of the mesh
     cl.buftricells = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, cl.cellCount * tricount      * 4);
     cl.buftris     = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, cl.cellCount * tricount * 12 * 4);
-    clbuffertime = (performance.now() - cltime) / 2;
+    cl.buftricells = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, cl.cellCount * tricount      * 4);
+    cl.buftris     = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, cl.cellCount * tricount * 12 * 4);
+    cl.buftricells = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, cl.cellCount * tricount      * 4);
+    cl.buftris     = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, cl.cellCount * tricount * 12 * 4);
+    cl.buftricells = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, cl.cellCount * tricount      * 4);
+    cl.buftris     = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, cl.cellCount * tricount * 12 * 4);
+    clbuffertime = (performance.now() - cltime) / 8;
     
     cltime = performance.now();
     cl.queue.enqueueWriteBuffer(cl.buftris, true, 0, cl.arrtris.byteLength, cl.arrtris);
-    clwritereadtime = performance.now() - cltime;
+    cl.queue.enqueueWriteBuffer(cl.buftris, true, 0, cl.arrtris.byteLength, cl.arrtris);
+    cl.queue.enqueueWriteBuffer(cl.buftris, true, 0, cl.arrtris.byteLength, cl.arrtris);
+    cl.queue.enqueueWriteBuffer(cl.buftris, true, 0, cl.arrtris.byteLength, cl.arrtris);
+    cl.queue.enqueueWriteBuffer(cl.buftris, true, 0, cl.arrtris.byteLength, cl.arrtris);
+    cl.queue.enqueueWriteBuffer(cl.buftris, true, 0, cl.arrtris.byteLength, cl.arrtris);
+    cl.queue.enqueueWriteBuffer(cl.buftris, true, 0, cl.arrtris.byteLength, cl.arrtris);
+    cl.queue.enqueueWriteBuffer(cl.buftris, true, 0, cl.arrtris.byteLength, cl.arrtris);
+    clwritereadtime = (performance.now() - cltime) / 8;
     
     cltime = performance.now();
     cl.copykernel.setArg(0, new Uint32Array([cl.cellCount]));
@@ -311,16 +324,26 @@ function clTransformCopyPerPlane(cl, vertices, faces, transform) {
     cl.copykernel.setArg(2, new Uint32Array([tricount]));
     cl.copykernel.setArg(3, cl.buftricells);
     cl.copykernel.setArg(4, cl.buftris);
-    clsetargtime = (performance.now() - cltime) / 5;
+    cl.copykernel.setArg(0, new Uint32Array([cl.cellCount]));
+    cl.copykernel.setArg(1, new Float32Array(transform));
+    cl.copykernel.setArg(2, new Uint32Array([tricount]));
+    clsetargtime = (performance.now() - cltime) / 8;
 
     var localsize = 1;
     var localWS = [localsize];
     var globalWS = [Math.ceil(tricount / localsize) * localsize];
     cltime = performance.now();
     cl.queue.enqueueNDRangeKernel(cl.copykernel, globalWS.length, null, globalWS, localWS);
+    cl.queue.enqueueNDRangeKernel(cl.copykernel, globalWS.length, null, globalWS, localWS);
+    cl.queue.enqueueNDRangeKernel(cl.copykernel, globalWS.length, null, globalWS, localWS);
+    cl.queue.enqueueNDRangeKernel(cl.copykernel, globalWS.length, null, globalWS, localWS);
+    cl.queue.enqueueNDRangeKernel(cl.copykernel, globalWS.length, null, globalWS, localWS);
+    cl.queue.enqueueNDRangeKernel(cl.copykernel, globalWS.length, null, globalWS, localWS);
+    cl.queue.enqueueNDRangeKernel(cl.copykernel, globalWS.length, null, globalWS, localWS);
+    cl.queue.enqueueNDRangeKernel(cl.copykernel, globalWS.length, null, globalWS, localWS);
 
     cl.queue.finish();
-    clrunkerneltime = performance.now() - cltime;
+    clrunkerneltime = (performance.now() - cltime)/8;
 
     return tricount * cl.cellCount;
 }
