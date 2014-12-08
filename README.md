@@ -14,9 +14,6 @@ Based on
 [Real Time Dynamic Fracture with Volumetric Approximate Convex Decompositions](https://www.graphics.rwth-aachen.de/media/teaching_files/mueller_siggraph12.pdf)
 by Müller, Chentanez, and Kim.
 
-###Working with WebCL
-####Performance Issues
-
 Algorithm Overview
 -----------------
 ###Fracturing
@@ -29,29 +26,44 @@ A pre-generated test fracture pattern (series of solid meshes):
 ![](img/fracturepattern.png)
 ^REPLACE WITH NEW IMAGE
 ####Alignment
-#####Paralelization
 
 ####Intersection
-#####Paralelization
 
-#####Performance Analysis:  CPU vs. GPU, Parallel vs. Sequential
+####Welding*
 
-####Welding
+####Island Detection*
 
-####Island Detection
+###Partial Fracture
+
+\* : not implemented.
+
+Implementation Details
+-------------------
+###Fracturing
 
 ####Stream Compaction
 #####Paralelization
 
-#####Performance Analysis:  CPU vs. GPU, Parallel vs. Sequential
-
-###Partial Fracture
+###Working with WebCL
+####Performance Issues
 
 ###Integration into an Existing Renderer/Rigid Body Simulator (CubicVR)
-####Advantages
 
-####Problems with CubicVR & Ammo.js
 
+Performance Analysis
+--------------------
+###Fracture Performance
+####Intersection: GPU vs. CPU, Parallel vs. Sequential
+
+###Stream Compaction
+####Parallel vs. Sequential
+
+###WebCL Performance
+####Kernel Execution
+####Setting Arguments
+####Reading/Writing Data from/to Processing Unit
+
+###CubicVR's Limits in Real-Time Simulation
 
 ---------------------------------------------------
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
