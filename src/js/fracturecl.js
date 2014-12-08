@@ -171,9 +171,8 @@ function makeFace(indices, points) {
         var points = [];
         for (var j = 0; j < f.length; j++) {
             var fj = f[j];
-            var e0 = asxyz(fj[0]); e0.other = 1; e0.j = j;
-            var e1 = asxyz(fj[1]); e1.other = 0; e1.j = j;
-            points.push(e0, e1);
+            var e0 = asxyz(fj[0]); e0.j = j;
+            points.push(e0);
         }
 
         // Put all the points into a tree
@@ -181,13 +180,10 @@ function makeFace(indices, points) {
 
         // This should create a loop that goes in the direction of the first edge
         var vertloop = [f[0][0]];
-        var laste = asxyz(f[0][0]); laste.other = 1; laste.j = 0;
+        var laste = asxyz(f[0][0]); laste.j = 0;
         for (var j = 1; j <= f.length; j++) {
-            var near = tree.nearest(asxyz(f[laste.j][laste.other]), 2);
+            var near = tree.nearest(asxyz(f[laste.j][1]), 1);
             var e = near[0][0];
-            if (e.j == laste.j) {
-                e = near[1][0];
-            }
             vertloop.push([e.x, e.y, e.z]);
             laste = e;
         }
