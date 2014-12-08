@@ -144,6 +144,12 @@ Because our main focus was creating the fractured geometry, we looked for an exi
 
 
 ##Performance Analysis
+
+Performance measurements were taken one one of the following setups. (Performance comparisons are on one machine.)
+
+* Arch Linux, Intel i5-4670 + NVIDIA GTX 750 (CPU/GPU comparisons)
+* Windows 8.1, Intel i7-4700HQ (CPU-only measurements)
+
 ###Fracture Performance
 We began to implement fracture using a naive sequential algorithm as a proof-of-concept.  The algorithm runs somewhat differently compared to the parallel algorithm (it sequentially does the clipping planes on the entire mesh, and keeps the mesh closed), but it's nice as a basis of comparison.
 ####Intersection: GPU vs. CPU, Parallel vs. Sequential
