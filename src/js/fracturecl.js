@@ -177,18 +177,27 @@ function makeFace(indices, points) {
     return {indices: idxout, values: values};
 }
 
+var time_setup_input;
+var time_setup_rest;
+
 function clSetupArgs(cl, iteration, tricount) {
     if (iteration > 0) {
+        var t0 = performance.now();
         cl.buftricells = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, cl.arrtricells.byteLength);
         cl.buftris     = cl.ctx.createBuffer(WebCL.MEM_READ_ONLY, cl.arrtris.byteLength);
         cl.queue.enqueueWriteBuffer(cl.buftris    , false, 0, cl.arrtris    .byteLength, cl.arrtris);
         cl.queue.enqueueWriteBuffer(cl.buftricells, false, 0, cl.arrtricells.byteLength, cl.arrtricells);
+        cl.queue.finish();
+        time_setup_input += performance.now() - t0;
     }
+
+    var t0 = performance.now();
 
     cl.buftrioutcells = cl.ctx.createBuffer(WebCL.MEM_READ_WRITE, tricount * 2      * 4);
     cl.buftriout      = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2 * 12 * 4);
     cl.bufnewoutcells = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount          * 4);
     cl.bufnewout      = cl.ctx.createBuffer(WebCL.MEM_WRITE_ONLY, tricount * 2 *  4 * 4);
+    cl.queue.finish();
 
     cl.kernel.setArg(0, new Uint32Array([cl.cellCount]));
     cl.kernel.setArg(1, cl.cellBuffers[iteration]);
@@ -206,9 +215,17 @@ function clSetupArgs(cl, iteration, tricount) {
     cl.kernel.setArg(9, cl.fractureCenter);
 
     cl.queue.finish();
+    time_setup_rest += performance.now() - t0;
 }
 
+var time_readbuffers;
+var time_compact_tris;
+var time_compact_news;
+var time_makeface;
+
 function clOutputToInput(cl, oldtricount) {
+    var t0 = performance.now();
+
     cl.buftris.release();
 
     var arrtrioutcells = new   Int32Array(oldtricount * 2);
@@ -223,14 +240,22 @@ function clOutputToInput(cl, oldtricount) {
     cl.buftriout     .release();
     cl.bufnewoutcells.release();
     cl.bufnewout     .release();
+    cl.queue.finish();
+
+    var t1 = performance.now();
 
     var tmp;
     tmp = floatNcompact(12, arrtrioutcells, arrtriout);
     var tricells = tmp.indices;
     var tris = tmp.values;
+
+    var t2 = performance.now();
+
     tmp = floatNcompact( 8, arrnewoutcells, arrnewout);
     var newcells = tmp.indices;
     var news = tmp.values;
+
+    var t3 = performance.now();
 
     tmp = makeFace(newcells, news);
     tricells = tricells.concat(tmp.indices);
@@ -239,7 +264,12 @@ function clOutputToInput(cl, oldtricount) {
     cl.arrtricells = new Int32Array(tricells);
     cl.arrtris = new Float32Array(tris);
 
-    cl.queue.finish();
+    var t4 = performance.now();
+
+    time_readbuffers += t1 - t0;
+    time_compact_tris += t2 - t1;
+    time_compact_news += t3 - t2;
+    time_makeface += t4 - t3;
 }
 
 function clVertfaceToTris(cl, vertices, faces) {
@@ -286,14 +316,21 @@ function clTransformCopyPerPlane(cl, vertices, faces, transform) {
 function clFracture(cl, vertices, faces, rotation, pImpact) {
     var tInit = performance.now();
     var t0;
+    time_readbuffers = 0;
+    time_compact_tris = 0;
+    time_compact_news = 0;
+    time_makeface = 0;
+    time_setup_input = 0;
+    time_setup_rest = 0;
+
     var vertcount = vertices.length;
     var tricount = faces.length;
     
     pImpact.push(0);
     cl.fractureCenter = new Float32Array(mult3c(pImpact, -1));
     
-    console.log(typeof pImpact[0]);
-    console.log(typeof rotation[0]);
+    //console.log(typeof pImpact[0]);
+    //console.log(typeof rotation[0]);
 
     var transform = [rotation[0], rotation[1], rotation[2], 0,
                      rotation[3], rotation[4], rotation[5], 0,
@@ -385,17 +422,23 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
     }
     var time_recenter = performance.now() - t0;
 
-    var time_total = performance.now() - tInit;
+    var time_clFracture = performance.now() - tInit;
 
-    console.log("time_total: "                 + time_total);
-    console.log("    time_transformcopy: "     + time_transformcopy);
-    console.log("    time_total_iterations: "  + time_total_iterations);
-    console.log("        time_setupargs: "     + time_setupargs);
-    console.log("        time_kernel: "        + time_kernel);
-    console.log("        time_outputtoinput: " + time_outputtoinput);
-    console.log("        time_proximity: "     + time_proximity);
-    console.log("    time_collect: "           + time_collect);
-    console.log("    time_recenter: "          + time_recenter);
+    console.log("v  time_transformcopy:       " + time_transformcopy);
+    console.log("      v time_setup_input:    " + time_setup_input);
+    console.log("      v time_setup_rest:     " + time_setup_rest);
+    console.log("   v  time_setupargs:        " + time_setupargs);
+    console.log("   v  time_kernel:           " + time_kernel);
+    console.log("      v  time_readbuffers:   " + time_readbuffers);
+    console.log("      v  time_compact_tris:  " + time_compact_tris);
+    console.log("      v  time_compact_news:  " + time_compact_news);
+    console.log("      v  time_makeface:      " + time_makeface);
+    console.log("   v  time_outputtoinput:    " + time_outputtoinput);
+    console.log("   v  time_proximity:        " + time_proximity);
+    console.log("v  time_total_iterations:    " + time_total_iterations);
+    console.log("v  time_collect:             " + time_collect);
+    console.log("v  time_recenter:            " + time_recenter);
+    console.log("time_clFracture:             " + time_clFracture);
 
     return cellfaces;
 }
