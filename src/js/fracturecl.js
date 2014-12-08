@@ -170,9 +170,8 @@ function makeFace(indices, points) {
         // Create an adjacency-list sort of thing from the edges we get in
         var points = [];
         for (var j = 0; j < f.length; j++) {
-            var fj = f[j];
-            var e0 = asxyz(fj[0]); e0.j = j;
-            points.push(e0);
+            var e = asxyz(f[j][0]); e.j = j;
+            points.push(e);
         }
 
         // Put all the points into a tree
@@ -182,16 +181,25 @@ function makeFace(indices, points) {
         var vertloop = [f[0][0]];
         var laste = asxyz(f[0][0]); laste.j = 0;
         for (var j = 1; j <= f.length; j++) {
-            var near = tree.nearest(asxyz(f[laste.j][1]), 1);
+            // Look for an edge starting where the last one ended
+            var near = tree.nearest(asxyz(f[laste.j][1]), 1, 0.0001);
+            if (near.length == 0) {
+                console.log("couldn't find next edge");
+            }
             var e = near[0][0];
+            tree.remove(e);
             vertloop.push([e.x, e.y, e.z]);
             laste = e;
         }
 
-        //console.log(vertloop);
+        var va = vertloop[0];
+        var vb = vertloop[f.length];
+        if (!(va[0] == vb[0] && va[1] == vb[1] && va[2] == vb[2])) {
+            // the loop was not closed
+            console.log(vertloop);
+        }
 
         // Create a triangle fan between the first vert and the rest of the verts
-
         var v0 = vertloop[0];
         for (var i = 1; i < vertloop.length - 1; i++) {
             idxout.push(iface);
@@ -199,8 +207,6 @@ function makeFace(indices, points) {
             pushfloat4(values, vertloop[i]);
             pushfloat4(values, vertloop[i + 1]);
         }
-
-        // TODO: Why do some of the triangles come out wound the wrong way?
     }
 
     return {indices: idxout, values: values};
@@ -402,6 +408,7 @@ function clFracture(cl, vertices, faces, rotation, pImpact) {
         }
 
         var t4 = performance.now();
+        console.log("iteration " + i);
         clOutputToInput(cl, tricount);
         tricount = cl.arrtricells.length;
 
