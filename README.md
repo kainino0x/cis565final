@@ -83,9 +83,12 @@ We implemented stream compaction in WebCL, but ran into some performance issues 
 This feature is noteworthy because we technically cheated this one.  Instead of properly combining faces, or doing some processing, we just group all the fragments that are not in the area of effect into a single mesh.  This means that said mesh will have: 1, several times more geometry than other fragments, 2, faces inside of the mesh, and 3, slightly overlapping/disconnected edges on the surface.
 
 ###Working with WebCL
+Because our target was an in-browser experience, we were limited to two choices for GPU-acceleration:  WebGL and WebCL.  While WebGL runs natively in most browsers, it does not yet support compute shaders as of this time, so we would have had to hack a solution using textures and feedbacks.  WebCL, on the other hand, is supported by **no** browsers, but Nokia has a plugin that can run it.  We chose to use WebCL for its flexibility compared to WebGL.
 ####Performance Issues
+We did, however, run into some performance issues with WebCL that were severe enough that a GPU stream compaction was slower than a sequential javascript method.  You can see a comparison between the two in the Performance Analysis section.  In addition, we logged the runtimes of individual set args, read/write, and kernel calls to show how slow it actually is.
 
 ###Integration into an Existing Renderer/Rigid Body Simulator (CubicVR)
+Because our main focus was creating the fractured geometry, we looked for an existing renderer and rigid body simulator.  CubicVR (physics built on ammo.js, which is compiled from bullet) provides a very simple-to-use library for both, though we ran into some issues here as well.  The performance issues we had with usingCubicVR are detailed in the Performance Analysis section of the readme.
 
 
 Performance Analysis
