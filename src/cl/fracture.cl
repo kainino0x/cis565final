@@ -149,7 +149,8 @@ kernel void scatterPoints(
     
     if (pointcells[index] != -1 && scatterout[index] < pointoutcount) {
         pointoutcells[scatterout[index]] = pointcells[index];
-        pointout[scatterout[index]] = points[index];
+        pointout[2 * scatterout[index]] = points[2 * index];
+        pointout[2 * scatterout[index] + 1] = points[2 * index + 1];
     }
 }
 
