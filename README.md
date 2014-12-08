@@ -7,25 +7,46 @@ Jiatong He, Kai Ninomiya
 
 [IMAGE_1]()
 
+Our goal was to create a gpu-accelerated interactive real-time mesh fracture application that runs in the browser.  We used WebCL to parallelize the algorithm and CubicVR to render and simulate the rigid bodies.
+
 [Live demo](https://kainino0x.github.io/cis565final/src/):
 requires the [Nokia WebCL plugin](http://webcl.nokiaresearch.com/) for Firefox.
 
-Based on
+>**Controls**
+>
+>`click + drag` : Rotate camera view
+>
+>`alt + click + drag` : Pan camera view
+>
+>`mouse scroll` : Zoom camera
+>
+>`click on object + drag` : Move selected object around
+>
+>`click + drag` : Rotate camera view
+>
+>`F + click on object` : Fracture object
+>
+>`W + click` : Toggle wireframe
+>
+>`D + click` : Toggle fracture pattern
+
+_Based on
 [Real Time Dynamic Fracture with Volumetric Approximate Convex Decompositions](https://www.graphics.rwth-aachen.de/media/teaching_files/mueller_siggraph12.pdf)
-by Müller, Chentanez, and Kim.
+by Müller, Chentanez, and Kim._
 
 Algorithm Overview
 -----------------
 ###Fracturing
 At a high level, fracturing is implemented by performing boolean intersection
 between segments of a fracture pattern and the segments of the object to be
-fractured. More information on the method is found in Mueller's paper (above).
+fractured.  The fracture pattern can be pre-generated, as is the case for our implementation.
 
 A pre-generated test fracture pattern (series of solid meshes):
 
 ![](img/fracturepattern.png)
 ^REPLACE WITH NEW IMAGE
 ####Alignment
+The first step is to align the fracture pattern with the point of impact.  We use the point the user clicks on the object as
 
 ####Intersection
 
