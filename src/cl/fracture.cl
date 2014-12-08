@@ -63,33 +63,50 @@ kernel void getScanInput(
     if (index >= outcount) {
         return;
     }
+    if (index == 0) {
+        scaninput[index] = 0;
+        return;
+    }
+    uint readindex = index - 1;
     if (index < count) {
-        if (cellnums[index] == -1) {
-            scaninput[index] = 0;
-        } else {
+        if (cellnums[readindex] > -1) {
             scaninput[index] = 1;
+        } else {
+            scaninput[index] = 0;
         }
     } else {
-        scaninput[index] = 1;
+        scaninput[index] = 0;
     }
 }
 
 // note that you could potentially do this with a single array that stores both out and in interleaved, and alternates by doing iter%2.
 kernel void scanIter(
-        /*0*/              uint  iter,       // iteration counter.  starts at 0.
+        /*0*/              uint  iter,       // iteration counter.  starts at 1.
         /*1*/              uint  count,
-        /*2*/ constant      int *bufin,      // Scan array used as input this iteration.
-        /*3*/ global        int *bufout      // Scan array used as output this iteration.
+        /*2*/ global        int *bufA,      // Scan array used as input this iteration.
+        /*3*/ global        int *bufB      // Scan array used as output this iteration.
         ){
     uint index = get_global_id(0);
     if (index >= count) {
         return;
     }
-    
-    if (index >= pow(2.0f, iter)) {
-        bufout[index] = bufin[index - (int)(pow(2.0f, iter - 1) + 0.01f)] + bufin[index];
+    int pow2 = 1;
+    for (int i = 0; i < iter; i++) {
+        pow2 *= 2;
+    }
+    if (index >= pow2) {
+        if (iter % 2 == 0) {
+            bufB[index] = bufA[index - pow2] + bufA[index];
+        } else {
+            bufA[index] = bufB[index - pow2] + bufB[index];
+        
+        }
     } else {
-        bufout[index] = bufin[index];
+        if (iter % 2 == 0) {
+            bufB[index] = bufA[index];
+        } else {
+            bufA[index] = bufB[index];
+        }
     }
 }
 
@@ -97,18 +114,19 @@ kernel void scanIter(
 // don't need scanInput's output because you can just check if tricells[index] == -1
 kernel void scatterTris(
         /*0*/                uint  tricount,        // size of original array
-        /*1*/ constant        int *tricells,        // len is tricount
-        /*2*/ constant struct Tri *tris,            // len is tricount
+        /*1*/ constant struct Tri *tris,            // len is tricount
+        /*2*/ constant        int *tricells,        // len is tricount
         /*3*/ constant        int *scatterout,      // len is (minimum power of 2 greater than tricount)
-        /*4*/ global          int *trioutcells,      // len is scatterout[tricount]
-        /*5*/ global   struct Tri *triout           // len is scatterout[tricount]
+        /*4*/                uint  trioutcount,   // size of new array
+        /*5*/ global   struct Tri *triout,          // len is scatterout[tricount]
+        /*6*/ global          int *trioutcells      // len is scatterout[tricount]
         ){
     uint index = get_global_id(0);
     if (index >= tricount) {
         return;
     }
     
-    if (tricells[index] != -1) {
+    if (tricells[index] != -1 && scatterout[index] < trioutcount) {
         trioutcells[scatterout[index]] = tricells[index];
         triout[scatterout[index]] = tris[index];
     }
@@ -117,18 +135,19 @@ kernel void scatterTris(
 // don't need scanInput's output because you can just check if tricells[index] == -1
 kernel void scatterPoints(
         /*0*/                uint  pointcount,        // size of original array
-        /*1*/ constant        int *pointcells,        // len is pointcount
-        /*2*/ constant     float4 *points,            // len is pointcount
+        /*1*/ constant     float4 *points,            // len is pointcount
+        /*2*/ constant        int *pointcells,        // len is pointcount
         /*3*/ constant        int *scatterout,        // len is (minimum power of 2 greater than pointcount)
-        /*4*/ global          int *pointoutcells,      // len is scatterout[pointcount]
-        /*5*/ global       float4 *pointout           // len is scatterout[pointcount]
+        /*4*/                uint  pointoutcount,     // size of new array
+        /*5*/ global       float4 *pointout,          // len is scatterout[pointcount]
+        /*6*/ global          int *pointoutcells     // len is scatterout[pointcount]
         ){
     uint index = get_global_id(0);
     if (index >= pointcount) {
         return;
     }
     
-    if (pointcells[index] != -1) {
+    if (pointcells[index] != -1 && scatterout[index] < pointoutcount) {
         pointoutcells[scatterout[index]] = pointcells[index];
         pointout[scatterout[index]] = points[index];
     }
