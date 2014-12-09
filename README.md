@@ -7,7 +7,7 @@ Jiatong He, Kai Ninomiya
 
 ![](https://github.com/kainino0x/cis565final/blob/master/img/manyshatter.png)
 
-[![Demo Video on YouTube](src/youtube.png)](https://www.youtube.com/watch?v=13sbZia4Kjc)
+[![Demo Video on YouTube](img/youtube.png)](https://www.youtube.com/watch?v=13sbZia4Kjc)
 
 Our goal was to create a gpu-accelerated interactive real-time mesh fracture application that runs in the browser.  We used WebCL to parallelize the algorithm and CubicVR to render and simulate the rigid bodies.
 
