@@ -1,4 +1,4 @@
-CIS565: Final Project -- GPU-Accelerated Dynamic Fracture in the Browser
+GPU-Accelerated Dynamic Fracture in the Browser - CIS 565 Final Project
 ===========
 Fall 2014
 -----------
