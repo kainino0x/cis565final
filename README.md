@@ -10,8 +10,8 @@ Jiatong He, Kai Ninomiya
 
 Our goal was to create a gpu-accelerated interactive real-time mesh fracture application that runs in the browser.  We used WebCL to parallelize the algorithm and CubicVR to render and simulate the rigid bodies.
 
-[Live Demo](https://kainino0x.github.io/cis565final/src/):
-requires the [Nokia WebCL plugin](http://webcl.nokiaresearch.com/) for Firefox.
+~~[Live Demo](https://kainino0x.github.io/cis565final/src/):
+requires the [Nokia WebCL plugin](http://webcl.nokiaresearch.com/) for Firefox.~~ (EDIT 2018 Feb: WebCL is dead. If you're lucky, you may still get this demo to work, but don't put in too much effort.)
 
 >**Controls**
 >
@@ -107,7 +107,7 @@ _\* : not implemented._
 _A fractured torus_
 
 ### Fracturing
-The fracturing algorithm was our greatest challenge.  It's an algorithm that is naturally sequential--clipping polygons usually requires some knowledge of neighbors and other information.  However, we devised a method that succesfully targets independent pieces of the algorithm at the cost of some accuracy.
+The fracturing algorithm was our greatest challenge.  It's an algorithm that is naturally sequential--clipping polygons usually requires some knowledge of neighbors and other information.  However, we devised a method that successfully targets independent pieces of the algorithm at the cost of some accuracy.
 #### Intersection
 Our intersection algorithm is simple clipping planes.  For each cell, the mesh is clipped by each cell face to give us the shard.  What's interesting is how we parallelized it.
 ##### Parallelization
@@ -158,7 +158,7 @@ We compared the runtime of our code on the GPU vs. the CPU, as well as the paral
 
 _Runtime of the fracture algorithm on the CPU compared to the GPU_
 
-The main thing to notice here is that the CPU and GPU times are nearly identical.  I have no explanation for why reads/writes have the same runtime, as well as kernels.  It may just be an issue with a data set that's too small.
+The main thing to notice here is that the CPU and GPU times are nearly identical.  We have no explanation for why reads/writes have the same runtime, as well as kernels.  It may just be an issue with a data set that's too small.
 
 ![](https://github.com/kainino0x/cis565final/blob/master/img/performance/p_s_intersection.png)
 
