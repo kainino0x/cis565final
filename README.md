@@ -11,7 +11,7 @@ Jiatong He, Kai Ninomiya
 Our goal was to create a gpu-accelerated interactive real-time mesh fracture application that runs in the browser.  We used WebCL to parallelize the algorithm and CubicVR to render and simulate the rigid bodies.
 
 ~~[Live Demo](https://kainino0x.github.io/cis565final/src/):
-requires the [Nokia WebCL plugin](http://webcl.nokiaresearch.com/) for Firefox.~~ (EDIT 2018 Feb: WebCL is dead. If you're lucky, you may still get this demo to work, but don't put in too much effort.)
+requires the [Nokia WebCL plugin](http://webcl.nokiaresearch.com/) for Firefox.~~ (EDIT 2018 Feb: WebCL is dead. In fact, it was already dead when we started this project. If you're lucky, you may still get this demo to work, but I don't recommend putting in the effort.)
 
 >**Controls**
 >
