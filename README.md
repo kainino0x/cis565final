@@ -1,3 +1,5 @@
+# This project doesn't work anymore. Please see the [port to WebGPU](https://github.com/kainino0x/webgpu-fracture-hack).
+
 # GPU-Accelerated Dynamic Fracture in the Browser - CIS 565 Final Project
 
 Fall 2014
